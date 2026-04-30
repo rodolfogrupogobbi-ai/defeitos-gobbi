@@ -27,6 +27,7 @@ export function PhotoUpload({ defectId, existingUrl, onUploaded }: PhotoUploadPr
       const { data } = supabase.storage.from('defect-photos').getPublicUrl(path)
       setPreview(data.publicUrl)
       onUploaded(data.publicUrl)
+      await supabase.from('defects').update({ photo_url: data.publicUrl }).eq('id', defectId)
     }
     setUploading(false)
   }

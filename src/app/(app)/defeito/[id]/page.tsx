@@ -1,0 +1,171 @@
+import { notFound, redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { STAGE_LABELS } from '@/types'
+import { HistoryList } from '@/components/defect/HistoryList'
+import { WhatsAppButton } from '@/components/defect/WhatsAppButton'
+import { StageAdvancer } from '@/components/defect/StageAdvancer'
+import { PhotoUpload } from '@/components/defect/PhotoUpload'
+import { getAlertLevel } from '@/lib/date-utils'
+import { Badge } from '@/components/ui/Badge'
+
+export default async function DefectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const [
+    { data: defect },
+    { data: profile },
+    { data: history },
+  ] = await Promise.all([
+    supabase
+      .from('defects')
+      .select(
+        `*,
+        company:companies(*),
+        brand:brands(*),
+        defect_type:defect_types(*),
+        received_by_profile:profiles!received_by(*)`
+      )
+      .eq('id', id)
+      .single(),
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('defect_history')
+      .select(`*, changed_by_profile:profiles!changed_by(*)`)
+      .eq('defect_id', id)
+      .order('changed_at', { ascending: true }),
+  ])
+
+  if (!defect || !profile) notFound()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const defectData = defect as any
+  const alert = getAlertLevel(defectData.current_stage, defectData.received_at)
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">
+            {defectData.brand?.name} — {defectData.product_name}
+          </h1>
+          <p className="text-sm text-gray-500">
+            {defectData.company?.name} · Ref: {defectData.reference}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {alert && (
+            <Badge variant={alert}>
+              {alert === 'red' ? '⚠ Atrasado' : '⏳ Atenção'}
+            </Badge>
+          )}
+          <Badge>{STAGE_LABELS[defectData.current_stage as keyof typeof STAGE_LABELS]}</Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        {/* Product details */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <h2 className="font-semibold text-gray-900">Dados do produto</h2>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            {[
+              ['Cor', defectData.color],
+              ['Tamanho', defectData.size],
+              ['NF', defectData.nf_number],
+              ['Cód. Use', defectData.cod_use],
+              ['Tipo de defeito', defectData.defect_type?.name],
+              [
+                'Recebido em',
+                format(new Date(defectData.received_at), 'dd/MM/yyyy', { locale: ptBR }),
+              ],
+              ['Recebido por', defectData.received_by_profile?.name],
+              ['Canal', defectData.communication_channel ?? '—'],
+              ['Protocolo', defectData.protocol_number ?? '—'],
+            ].map(([label, value]) => (
+              <div key={String(label)}>
+                <dt className="text-gray-500">{label}</dt>
+                <dd className="font-medium">{value || '—'}</dd>
+              </div>
+            ))}
+          </dl>
+          {defectData.resolution_notes && (
+            <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-500 mb-1">Observações de encerramento</p>
+              <p className="text-sm text-gray-700">{defectData.resolution_notes}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {/* Client */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+            <h2 className="font-semibold text-gray-900">Cliente</h2>
+            <p className="text-sm font-medium">{defectData.client_name}</p>
+            <p className="text-sm text-gray-600">{defectData.client_phone}</p>
+            <WhatsAppButton defect={defectData} userId={user.id} />
+          </div>
+
+          {/* Financial */}
+          {(defectData.client_amount_paid !== null ||
+            defectData.brand_reimbursement_amount !== null) && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+              <h2 className="font-semibold text-gray-900">Financeiro</h2>
+              {defectData.client_amount_paid !== null && (
+                <p className="text-sm">
+                  Pago ao cliente:{' '}
+                  <strong>R$ {Number(defectData.client_amount_paid).toFixed(2)}</strong>
+                  {defectData.client_paid_at && (
+                    <span className="text-gray-500 ml-1">
+                      em {format(new Date(defectData.client_paid_at), 'dd/MM/yyyy')}
+                    </span>
+                  )}
+                </p>
+              )}
+              {defectData.brand_reimbursement_amount !== null && (
+                <p className="text-sm">
+                  Recebido da marca:{' '}
+                  <strong>R$ {Number(defectData.brand_reimbursement_amount).toFixed(2)}</strong>
+                  {defectData.brand_reimbursed_at && (
+                    <span className="text-gray-500 ml-1">
+                      em {format(new Date(defectData.brand_reimbursed_at), 'dd/MM/yyyy')}
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Photo */}
+          <PhotoUpload
+            defectId={defectData.id}
+            existingUrl={defectData.photo_url}
+            onUploaded={async () => {}}
+          />
+        </div>
+      </div>
+
+      {/* Stage advancement */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="font-semibold text-gray-900 mb-3">Ações</h2>
+        <StageAdvancer defect={defectData} userId={user.id} userRole={profile.role} />
+      </div>
+
+      {/* History */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="font-semibold text-gray-900 mb-4">Histórico</h2>
+        <HistoryList history={(history ?? []) as any} />
+      </div>
+    </div>
+  )
+}
