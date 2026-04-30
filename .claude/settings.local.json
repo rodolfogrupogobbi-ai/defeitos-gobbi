@@ -16,7 +16,24 @@
       "Bash(git -C /c/Users/rodol/defeitos-gobbi status --short)",
       "Bash(git -C /c/Users/rodol/defeitos-gobbi log --oneline -5)",
       "Bash(git -C /c/Users/rodol/defeitos-gobbi status --short --untracked-files=all)",
-      "Bash(git -C /c/Users/rodol/defeitos-gobbi log --oneline HEAD~1..HEAD --name-status)"
+      "Bash(git -C /c/Users/rodol/defeitos-gobbi log --oneline HEAD~1..HEAD --name-status)",
+      "PowerShell(Get-Content \"$env:APPDATA\\\\Claude\\\\claude_desktop_config.json\" 2>$null; Get-Content \"$env:USERPROFILE\\\\.claude\\\\settings.json\" 2>$null | Select-Object -First 50)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.claude\\\\\" -ErrorAction SilentlyContinue; Test-Path \"$env:USERPROFILE\\\\.claude\\\\mcp_servers.json\")",
+      "PowerShell(node --version)",
+      "PowerShell(npx --version)",
+      "PowerShell(claude mcp add supabase npx -- -y @supabase/mcp-server-supabase@latest --project-ref vwkkmdeibwdrsywramfy --access-token sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096 2>&1)",
+      "PowerShell(claude mcp add --help 2>&1)",
+      "PowerShell(claude mcp add -s user supabase -- npx -y @supabase/mcp-server-supabase@latest --project-ref vwkkmdeibwdrsywramfy --access-token sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096 2>&1)",
+      "PowerShell(claude mcp list 2>&1)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.claude\\\\\" | Select-Object Name, Length, PSIsContainer)",
+      "PowerShell(claude mcp get \"claude.ai Google Drive\" 2>&1)",
+      "PowerShell(claude mcp get claude.ai` Google` Drive 2>&1)",
+      "PowerShell($appData = $env:APPDATA; $localAppData = $env:LOCALAPPDATA; dir \"$appData\\\\claude-code\\\\\" -ErrorAction SilentlyContinue; dir \"$localAppData\\\\claude-code\\\\\" -ErrorAction SilentlyContinue; dir \"$appData\\\\ClaudeCode\\\\\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command claude)",
+      "PowerShell(node \"C:\\\\Users\\\\rodol\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\@anthropic-ai\\\\claude-code\\\\cli.js\" mcp add -s user supabase -- npx \"-y\" \"@supabase/mcp-server-supabase@latest\" \"--project-ref\" \"vwkkmdeibwdrsywramfy\" \"--access-token\" \"sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096\" 2>&1)",
+      "PowerShell(npm list -g --depth=0 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\rodol\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\@anthropic-ai\\\\claude-code\\\\bin\\\\claude.exe\" mcp add -s user supabase npx -- -y \"@supabase/mcp-server-supabase@latest\" --project-ref vwkkmdeibwdrsywramfy --access-token sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096 2>&1)",
+      "PowerShell($pat = \"sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096\"; $ref = \"vwkkmdeibwdrsywramfy\"; $r = Invoke-WebRequest -Uri \"https://api.supabase.com/v1/projects/$ref/database/query\" -Method GET -Headers @{\"Authorization\"=\"Bearer $pat\"} -ErrorAction SilentlyContinue; Write-Output \"Status: $\\($r.StatusCode\\)\")"
     ]
   }
 }
