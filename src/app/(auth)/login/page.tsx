@@ -17,7 +17,7 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('E-mail ou senha incorretos.')
+      setError(`Erro: ${error.message} (${error.status ?? 'sem status'})`)
       setLoading(false)
     } else {
       router.push('/kanban')
