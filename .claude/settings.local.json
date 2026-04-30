@@ -9,7 +9,14 @@
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('test:', p.scripts.test, '| test:watch:', p.scripts['test:watch']\\)\")",
       "Bash(git commit *)",
       "Bash(npm test *)",
-      "Bash(npx jest *)"
+      "Bash(npx jest *)",
+      "Bash(npx tsc *)",
+      "Bash(git init *)",
+      "Bash(git -C /c/Users/rodol/defeitos-gobbi status)",
+      "Bash(git -C /c/Users/rodol/defeitos-gobbi status --short)",
+      "Bash(git -C /c/Users/rodol/defeitos-gobbi log --oneline -5)",
+      "Bash(git -C /c/Users/rodol/defeitos-gobbi status --short --untracked-files=all)",
+      "Bash(git -C /c/Users/rodol/defeitos-gobbi log --oneline HEAD~1..HEAD --name-status)"
     ]
   }
 }
