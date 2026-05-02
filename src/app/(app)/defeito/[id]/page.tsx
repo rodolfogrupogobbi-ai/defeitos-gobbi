@@ -120,7 +120,10 @@ export default async function DefectDetailPage({
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
             <h2 className="font-semibold text-gray-900">Cliente</h2>
             <p className="text-sm font-medium">{defectData.client_name}</p>
-            <PhoneReveal phone={defectData.client_phone} />
+            {defectData.client_phone
+              ? <PhoneReveal phone={defectData.client_phone} />
+              : <p className="text-sm text-gray-600">—</p>
+            }
             <WhatsAppButton defect={defectData} userId={user.id} />
           </div>
 
