@@ -160,7 +160,6 @@ export default async function DefectDetailPage({
           <PhotoUpload
             defectId={defectData.id}
             existingUrl={defectData.photo_url}
-            onUploaded={async () => {}}
           />
         </div>
       </div>
