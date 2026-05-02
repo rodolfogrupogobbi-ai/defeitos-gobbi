@@ -114,3 +114,13 @@ export interface WhatsAppTemplate {
   message_template: string
   updated_at: string
 }
+
+export interface BrandContact {
+  id: string
+  brand_id: string
+  name: string
+  phone: string | null
+  email: string | null
+  role: string | null
+  created_at: string
+}
