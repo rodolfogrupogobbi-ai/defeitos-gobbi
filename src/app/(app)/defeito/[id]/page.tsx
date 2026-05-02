@@ -39,6 +39,7 @@ export default async function DefectDetailPage({
         received_by_profile:profiles!received_by(*)`
       )
       .eq('id', id)
+      .is('deleted_at', null)
       .single(),
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase

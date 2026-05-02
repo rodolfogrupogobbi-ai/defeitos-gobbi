@@ -4,7 +4,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   const { code } = await request.json()
-  if (!code) return NextResponse.json({ ok: false })
+
+  // Validate format before hitting the DB
+  if (!code || !/^\d{6}$/.test(code)) {
+    return NextResponse.json({ ok: false })
+  }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -19,19 +23,21 @@ export async function POST(request: NextRequest) {
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 
-  if (!data) return NextResponse.json({ ok: false })
+  if (!data) {
+    // Wrong code: delete ALL pending codes for this user to prevent brute force
+    await admin.from('device_verifications').delete().eq('user_id', user.id)
+    return NextResponse.json({ ok: false, expired: true })
+  }
 
-  // Deletar código usado
   await admin.from('device_verifications').delete().eq('id', data.id)
 
-  // Setar cookie de dispositivo confiável (30 dias)
   const cookieName = `trusted_device_${user.id}`
   const response = NextResponse.json({ ok: true })
   response.cookies.set(cookieName, '1', {
     maxAge: 30 * 24 * 60 * 60,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
   })
   return response

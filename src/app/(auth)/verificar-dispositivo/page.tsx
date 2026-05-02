@@ -28,6 +28,9 @@ export default function VerificarDispositivoPage() {
       const data = await res.json()
       if (data.ok) {
         router.push('/kanban')
+      } else if (data.expired) {
+        setCode('')
+        setError('Código inválido. Por segurança, o código foi invalidado. Solicite um novo abaixo.')
       } else {
         setError('Código inválido ou expirado. Verifique e tente novamente.')
       }
