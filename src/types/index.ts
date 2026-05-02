@@ -82,6 +82,8 @@ export interface Defect {
   communication_channel: CommunicationChannel | null
   protocol_number: string | null
   photo_url: string | null
+  piece_cost: number | null
+  nf_factory: string | null
   client_amount_paid: number | null
   client_paid_at: string | null
   brand_reimbursement_amount: number | null

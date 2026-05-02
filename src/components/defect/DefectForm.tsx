@@ -18,7 +18,10 @@ const schema = z.object({
   color: z.string().optional(),
   size: z.string().optional(),
   nf_number: z.string().optional(),
+  nf_factory: z.string().optional(),
   cod_use: z.string().optional(),
+  piece_cost: z.string().optional(),
+  client_amount_paid: z.string().optional(),
   defect_type_id: z.string().min(1, 'Selecione o tipo de defeito'),
   client_name: z.string().min(1, 'Informe o nome do cliente'),
   client_phone: z.string().min(8, 'Informe o telefone'),
@@ -90,7 +93,15 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
     const supabase = createClient()
     const { data: defect, error: err } = await supabase
       .from('defects')
-      .insert({ ...data, client_code: data.client_code || null, received_by: receivedBy, current_stage: 'received' })
+      .insert({
+        ...data,
+        client_code: data.client_code || null,
+        nf_factory: data.nf_factory || null,
+        piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
+        client_amount_paid: data.client_amount_paid ? parseFloat(data.client_amount_paid) : null,
+        received_by: receivedBy,
+        current_stage: 'received',
+      })
       .select()
       .single()
     if (err) {
@@ -154,10 +165,28 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
       <div className="grid grid-cols-3 gap-4">
         <Input label="Cor" {...register('color')} />
         <Input label="Tamanho" {...register('size')} />
-        <Input label="NF" {...register('nf_number')} />
+        <Input label="NF (venda ao cliente)" {...register('nf_number')} />
       </div>
 
-      <Input label="Cód. Use" {...register('cod_use')} />
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="NF de origem da fábrica" {...register('nf_factory')} />
+        <Input label="Cód. Use" {...register('cod_use')} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Valor de custo da peça <span className="text-gray-400 font-normal">(R$)</span>
+          </label>
+          <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('piece_cost')} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Valor pago pelo cliente <span className="text-gray-400 font-normal">(R$)</span>
+          </label>
+          <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('client_amount_paid')} />
+        </div>
+      </div>
 
       <div className="flex flex-col gap-1">
         <Select

@@ -91,7 +91,8 @@ export default async function DefectDetailPage({
             {[
               ['Cor', defectData.color],
               ['Tamanho', defectData.size],
-              ['NF', defectData.nf_number],
+              ['NF (venda ao cliente)', defectData.nf_number],
+              ['NF origem fábrica', defectData.nf_factory],
               ['Cód. Use', defectData.cod_use],
               ['Tipo de defeito', defectData.defect_type?.name],
               [
@@ -130,10 +131,17 @@ export default async function DefectDetailPage({
           </div>
 
           {/* Financial */}
-          {(defectData.client_amount_paid !== null ||
+          {(defectData.piece_cost !== null ||
+            defectData.client_amount_paid !== null ||
             defectData.brand_reimbursement_amount !== null) && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
               <h2 className="font-semibold text-gray-900">Financeiro</h2>
+              {defectData.piece_cost !== null && (
+                <p className="text-sm">
+                  Custo da peça:{' '}
+                  <strong>R$ {Number(defectData.piece_cost).toFixed(2)}</strong>
+                </p>
+              )}
               {defectData.client_amount_paid !== null && (
                 <p className="text-sm">
                   Pago ao cliente:{' '}
