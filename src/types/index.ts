@@ -88,12 +88,15 @@ export interface Defect {
   brand_reimbursed_at: string | null
   reimbursement_method: ReimbursementMethod | null
   resolution_notes: string | null
+  deleted_at: string | null
+  deleted_by: string | null
   created_at: string
   updated_at: string
   company?: Company
   brand?: Brand
   defect_type?: DefectType
   received_by_profile?: Profile
+  deleted_by_profile?: Profile
 }
 
 export interface DefectHistory {

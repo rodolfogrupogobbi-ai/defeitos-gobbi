@@ -10,6 +10,7 @@ import { PhotoUpload } from '@/components/defect/PhotoUpload'
 import { getAlertLevel } from '@/lib/date-utils'
 import { Badge } from '@/components/ui/Badge'
 import { PhoneReveal } from '@/components/ui/PhoneReveal'
+import { DeleteDefectButton } from '@/components/defect/DeleteDefectButton'
 
 export default async function DefectDetailPage({
   params,
@@ -76,6 +77,9 @@ export default async function DefectDetailPage({
             </Badge>
           )}
           <Badge>{STAGE_LABELS[defectData.current_stage as keyof typeof STAGE_LABELS]}</Badge>
+          {profile.role === 'admin' && (
+            <DeleteDefectButton defectId={defectData.id} />
+          )}
         </div>
       </div>
 

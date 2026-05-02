@@ -12,6 +12,7 @@ export default async function KanbanPage() {
     .from('defects')
     .select('*, company:companies(*), brand:brands(*), defect_type:defect_types(*)')
     .in('current_stage', ACTIVE_STAGES)
+    .is('deleted_at', null)
     .order('received_at', { ascending: true })
 
   return (

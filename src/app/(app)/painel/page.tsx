@@ -47,6 +47,7 @@ export default async function PainelPage({
     )
     .gte('received_at', from)
     .lte('received_at', to)
+    .is('deleted_at', null)
     .order('received_at', { ascending: false })
 
   if (sp.company) query = query.eq('company_id', sp.company)
@@ -94,7 +95,15 @@ export default async function PainelPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Painel Gerencial</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">Painel Gerencial</h1>
+        <a
+          href="/painel/excluidos"
+          className="text-sm text-red-600 hover:underline"
+        >
+          Ver defeitos excluídos
+        </a>
+      </div>
 
       {/* Filters */}
       <form method="GET" className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap gap-4 items-end">
