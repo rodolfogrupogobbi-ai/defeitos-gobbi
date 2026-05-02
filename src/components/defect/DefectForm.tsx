@@ -22,6 +22,7 @@ const schema = z.object({
   defect_type_id: z.string().min(1, 'Selecione o tipo de defeito'),
   client_name: z.string().min(1, 'Informe o nome do cliente'),
   client_phone: z.string().min(8, 'Informe o telefone'),
+  client_code: z.string().optional(),
   received_at: z.string().min(1, 'Informe a data'),
 })
 type FormData = z.infer<typeof schema>
@@ -89,7 +90,7 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
     const supabase = createClient()
     const { data: defect, error: err } = await supabase
       .from('defects')
-      .insert({ ...data, received_by: receivedBy, current_stage: 'received' })
+      .insert({ ...data, client_code: data.client_code || null, received_by: receivedBy, current_stage: 'received' })
       .select()
       .single()
     if (err) {
@@ -193,6 +194,17 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
           label="Telefone (WhatsApp) *"
           error={errors.client_phone?.message}
           {...register('client_phone')}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">
+          Código do cliente{' '}
+          <span className="text-gray-400 font-normal">(PDV)</span>
+        </label>
+        <Input
+          {...register('client_code')}
+          placeholder="Opcional — código do cliente no sistema da loja"
         />
       </div>
 

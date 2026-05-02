@@ -75,6 +75,7 @@ export interface Defect {
   defect_type_id: string
   client_name: string
   client_phone: string
+  client_code: string | null
   received_by: string
   received_at: string
   current_stage: Stage
