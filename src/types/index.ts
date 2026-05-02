@@ -129,3 +129,10 @@ export interface BrandContact {
   role: string | null
   created_at: string
 }
+
+export interface DefectPhoto {
+  id: string
+  defect_id: string
+  url: string
+  created_at: string
+}

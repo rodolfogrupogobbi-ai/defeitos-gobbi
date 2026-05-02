@@ -8,12 +8,15 @@ import type { Defect } from '@/types'
 export function KanbanBoard({ defects }: { defects: Defect[] }) {
   const [search, setSearch] = useState('')
 
+  const q = search.toLowerCase()
   const filtered = search
     ? defects.filter(
         d =>
-          d.client_name.toLowerCase().includes(search.toLowerCase()) ||
-          (d.brand?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-          d.product_name.toLowerCase().includes(search.toLowerCase())
+          d.client_name.toLowerCase().includes(q) ||
+          (d.brand?.name ?? '').toLowerCase().includes(q) ||
+          d.product_name.toLowerCase().includes(q) ||
+          d.reference.toLowerCase().includes(q) ||
+          (d.nf_number ?? '').toLowerCase().includes(q)
       )
     : defects
 
@@ -23,7 +26,7 @@ export function KanbanBoard({ defects }: { defects: Defect[] }) {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por cliente, marca ou produto..."
+          placeholder="Buscar por cliente, marca, produto, referência ou NF..."
           className="border border-gray-300 rounded-md px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <Link

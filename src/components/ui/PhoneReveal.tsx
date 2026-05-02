@@ -3,12 +3,17 @@ import { useState, useEffect, useRef } from 'react'
 import { maskPhone } from '@/lib/mask-phone'
 
 interface Props {
-  phone: string | null | undefined
+  // Secure mode: phone never in RSC payload — fetched via API after password verify
+  fetchUrl?: string
+  maskedPhone?: string
+  // Legacy mode: phone passed directly (client components that already have it)
+  phone?: string | null
   className?: string
 }
 
-export function PhoneReveal({ phone, className }: Props) {
+export function PhoneReveal({ fetchUrl, maskedPhone, phone, className }: Props) {
   const [revealed, setRevealed] = useState(false)
+  const [revealedPhone, setRevealedPhone] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -27,6 +32,7 @@ export function PhoneReveal({ phone, className }: Props) {
         if (c <= 1) {
           clearInterval(timerRef.current!)
           setRevealed(false)
+          setRevealedPhone(null)
           return 0
         }
         return c - 1
@@ -45,14 +51,22 @@ export function PhoneReveal({ phone, className }: Props) {
         body: JSON.stringify({ password }),
       })
       const data = await res.json()
-      if (data.ok) {
-        setRevealed(true)
-        setShowModal(false)
-        setPassword('')
-        startCountdown()
-      } else {
+      if (!data.ok) {
         setError('Senha incorreta')
+        setLoading(false)
+        return
       }
+
+      if (fetchUrl) {
+        const phoneRes = await fetch(fetchUrl)
+        const phoneData = await phoneRes.json()
+        setRevealedPhone(phoneData.phone ?? null)
+      }
+
+      setRevealed(true)
+      setShowModal(false)
+      setPassword('')
+      startCountdown()
     } catch {
       setError('Erro ao verificar. Tente novamente.')
     } finally {
@@ -66,12 +80,14 @@ export function PhoneReveal({ phone, className }: Props) {
     setError('')
   }
 
+  const displayPhone = revealed
+    ? (fetchUrl ? revealedPhone : phone) ?? '—'
+    : (maskedPhone ?? maskPhone(phone))
+
   return (
     <>
       <div className={`flex items-center gap-2 ${className ?? ''}`}>
-        <span className="text-sm text-gray-700">
-          {revealed ? phone : maskPhone(phone)}
-        </span>
+        <span className="text-sm text-gray-700">{displayPhone}</span>
         {!revealed ? (
           <button
             type="button"

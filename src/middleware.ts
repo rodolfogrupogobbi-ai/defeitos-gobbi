@@ -30,10 +30,11 @@ export async function middleware(request: NextRequest) {
 
   if (!user) {
     if (isApiPath) {
-      // API routes: return 401 JSON, not redirect
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-    }
-    if (!isPublicPath) {
+      // Cron routes authenticate via CRON_SECRET in the handler — let them through
+      if (!pathname.startsWith('/api/cron/')) {
+        return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+      }
+    } else if (!isPublicPath) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
   }

@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -11,6 +12,7 @@ import { getAlertLevel } from '@/lib/date-utils'
 import { Badge } from '@/components/ui/Badge'
 import { PhoneReveal } from '@/components/ui/PhoneReveal'
 import { DeleteDefectButton } from '@/components/defect/DeleteDefectButton'
+import { maskPhone } from '@/lib/mask-phone'
 
 export default async function DefectDetailPage({
   params,
@@ -28,6 +30,7 @@ export default async function DefectDetailPage({
     { data: defect },
     { data: profile },
     { data: history },
+    { data: photos },
   ] = await Promise.all([
     supabase
       .from('defects')
@@ -47,6 +50,11 @@ export default async function DefectDetailPage({
       .select(`*, changed_by_profile:profiles!changed_by(*)`)
       .eq('defect_id', id)
       .order('changed_at', { ascending: true }),
+    supabase
+      .from('defect_photos')
+      .select('*')
+      .eq('defect_id', id)
+      .order('created_at', { ascending: true }),
   ])
 
   if (!defect || !profile) notFound()
@@ -78,6 +86,12 @@ export default async function DefectDetailPage({
             </Badge>
           )}
           <Badge>{STAGE_LABELS[defectData.current_stage as keyof typeof STAGE_LABELS]}</Badge>
+          <Link
+            href={`/defeito/${id}/editar`}
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
+          >
+            Editar
+          </Link>
           {profile.role === 'admin' && (
             <DeleteDefectButton defectId={defectData.id} />
           )}
@@ -125,7 +139,10 @@ export default async function DefectDetailPage({
             <h2 className="font-semibold text-gray-900">Cliente</h2>
             <p className="text-sm font-medium">{defectData.client_name}</p>
             {defectData.client_phone
-              ? <PhoneReveal phone={defectData.client_phone} />
+              ? <PhoneReveal
+                  fetchUrl={`/api/defects/${id}/phone`}
+                  maskedPhone={maskPhone(defectData.client_phone)}
+                />
               : <p className="text-sm text-gray-600">—</p>
             }
             <WhatsAppButton defect={defectData} userId={user.id} />
@@ -168,10 +185,11 @@ export default async function DefectDetailPage({
             </div>
           )}
 
-          {/* Photo */}
+          {/* Photos */}
           <PhotoUpload
             defectId={defectData.id}
-            existingUrl={defectData.photo_url}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            photos={(photos ?? []) as any}
           />
         </div>
       </div>
