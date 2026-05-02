@@ -44,9 +44,15 @@ export default function VerificarDispositivoPage() {
   async function handleResend() {
     setResending(true)
     setResendSuccess(false)
+    setError('')
     try {
-      await fetch('/api/auth/send-otp', { method: 'POST' })
-      setResendSuccess(true)
+      const res = await fetch('/api/auth/send-otp', { method: 'POST' })
+      const data = await res.json()
+      if (data.rateLimited) {
+        setError('Aguarde 90 segundos antes de solicitar um novo código.')
+      } else {
+        setResendSuccess(true)
+      }
     } catch {
       // silently ignore
     } finally {

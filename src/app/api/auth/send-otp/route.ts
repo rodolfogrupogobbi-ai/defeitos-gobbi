@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const RATE_LIMIT_MS = 90 * 1000 // 90 seconds between sends
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -12,7 +13,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Verificar se o dispositivo já é confiável
   const cookieName = `trusted_device_${user.id}`
   const trusted = request.cookies.get(cookieName)
   if (trusted) {
@@ -21,7 +21,19 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient()
 
-  // Verificar se já existe um código válido (evitar spam)
+  // Rate limit: check for any code (even expired) created within the last 90 seconds
+  const { data: recent } = await admin
+    .from('device_verifications')
+    .select('created_at')
+    .eq('user_id', user.id)
+    .gte('created_at', new Date(Date.now() - RATE_LIMIT_MS).toISOString())
+    .maybeSingle()
+
+  if (recent) {
+    return NextResponse.json({ otp_sent: false, rateLimited: true })
+  }
+
+  // No valid unexpired code — generate a new one
   const { data: existing } = await admin
     .from('device_verifications')
     .select('id')
@@ -30,21 +42,16 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (!existing) {
-    // Gerar novo código de 6 dígitos
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-    // Apagar verificações antigas deste usuário
     await admin.from('device_verifications').delete().eq('user_id', user.id)
-
-    // Salvar novo código
     await admin.from('device_verifications').insert({
       user_id: user.id,
       code,
       expires_at: expiresAt,
     })
 
-    // Enviar e-mail (falha silenciosa — código já foi salvo, usuário pode tentar reenviar)
     await resend.emails.send({
       from: 'Defeitos Gobbi <onboarding@resend.dev>',
       to: user.email,

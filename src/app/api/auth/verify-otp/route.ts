@@ -5,7 +5,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   const { code } = await request.json()
 
-  // Validate format before hitting the DB
   if (!code || !/^\d{6}$/.test(code)) {
     return NextResponse.json({ ok: false })
   }
@@ -24,8 +23,11 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (!data) {
-    // Wrong code: delete ALL pending codes for this user to prevent brute force
-    await admin.from('device_verifications').delete().eq('user_id', user.id)
+    // Expire the code immediately (don't delete) — preserves rate limit window in send-otp
+    await admin
+      .from('device_verifications')
+      .update({ expires_at: new Date().toISOString() })
+      .eq('user_id', user.id)
     return NextResponse.json({ ok: false, expired: true })
   }
 
