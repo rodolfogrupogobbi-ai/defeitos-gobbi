@@ -51,6 +51,12 @@ export default async function DefectDetailPage({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const defectData = defect as any
+
+  const { data: brandContacts } = await supabase
+    .from('brand_contacts')
+    .select('*')
+    .eq('brand_id', defectData.brand_id)
+    .order('name')
   const alert = getAlertLevel(defectData.current_stage, defectData.received_at)
 
   return (
@@ -162,6 +168,29 @@ export default async function DefectDetailPage({
         <h2 className="font-semibold text-gray-900 mb-3">Ações</h2>
         <StageAdvancer defect={defectData} userId={user.id} userRole={profile.role} />
       </div>
+
+      {/* Brand Contacts */}
+      {brandContacts && brandContacts.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 mb-3">
+            Contatos da marca — {defectData.brand?.name}
+          </h2>
+          <ul className="space-y-3">
+            {brandContacts.map((c: any) => (
+              <li key={c.id} className="flex flex-col gap-0.5">
+                <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                {c.role && <p className="text-xs text-gray-500">{c.role}</p>}
+                {c.phone && <PhoneReveal phone={c.phone} />}
+                {c.email && (
+                  <a href={`mailto:${c.email}`} className="text-xs text-blue-600 hover:underline">
+                    {c.email}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* History */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
