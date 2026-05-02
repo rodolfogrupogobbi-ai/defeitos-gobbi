@@ -92,6 +92,7 @@ export default async function DefectDetailPage({
               ['Recebido por', defectData.received_by_profile?.name],
               ['Canal', defectData.communication_channel ?? '—'],
               ['Protocolo', defectData.protocol_number ?? '—'],
+              ...(defectData.client_code ? [['Cód. cliente (PDV)', defectData.client_code]] : []),
             ].map(([label, value]) => (
               <div key={String(label)}>
                 <dt className="text-gray-500">{label}</dt>
