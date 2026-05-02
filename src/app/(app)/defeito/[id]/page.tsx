@@ -9,6 +9,7 @@ import { StageAdvancer } from '@/components/defect/StageAdvancer'
 import { PhotoUpload } from '@/components/defect/PhotoUpload'
 import { getAlertLevel } from '@/lib/date-utils'
 import { Badge } from '@/components/ui/Badge'
+import { PhoneReveal } from '@/components/ui/PhoneReveal'
 
 export default async function DefectDetailPage({
   params,
@@ -113,7 +114,7 @@ export default async function DefectDetailPage({
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
             <h2 className="font-semibold text-gray-900">Cliente</h2>
             <p className="text-sm font-medium">{defectData.client_name}</p>
-            <p className="text-sm text-gray-600">{defectData.client_phone}</p>
+            <PhoneReveal phone={defectData.client_phone} />
             <WhatsAppButton defect={defectData} userId={user.id} />
           </div>
 
