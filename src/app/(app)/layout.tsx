@@ -16,9 +16,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile) redirect('/login')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen flex" style={{ background: '#f1f5f9' }}>
       <AppNav profile={profile} />
-      <main className="max-w-screen-2xl mx-auto px-4 py-6">{children}</main>
+      <main className="flex-1 min-w-0 p-6 overflow-auto">{children}</main>
     </div>
   )
 }

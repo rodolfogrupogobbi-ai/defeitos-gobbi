@@ -22,36 +22,58 @@ export function AppNav({ profile }: { profile: Profile }) {
   ]
 
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-screen-2xl mx-auto px-4 flex items-center justify-between h-14">
-        <div className="flex items-center gap-6">
-          <span className="font-bold text-gray-900">Grupo Gobbi</span>
-          <div className="flex gap-1">
-            {links.filter(l => l.show).map(l => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  pathname.startsWith(l.href)
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">{profile.name}</span>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-gray-900"
-          >
-            Sair
-          </button>
-        </div>
+    <aside
+      className="flex flex-col shrink-0 h-screen sticky top-0"
+      style={{ width: 'var(--sidebar-width)', background: 'var(--navy)' }}
+    >
+      {/* Logo */}
+      <div className="px-5 py-5 border-b" style={{ borderColor: 'var(--navy-light)' }}>
+        <span className="font-bold text-white text-base leading-tight block">Grupo Gobbi</span>
+        <span className="text-xs mt-0.5 block" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Controle de Defeitos
+        </span>
       </div>
-    </nav>
+
+      {/* Nav links */}
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+        {links.filter(l => l.show).map(l => {
+          const active = pathname.startsWith(l.href)
+          return (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={
+                active
+                  ? { background: 'var(--orange)', color: '#fff' }
+                  : { color: 'rgba(255,255,255,0.75)' }
+              }
+              onMouseEnter={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--navy-light)'
+              }}
+              onMouseLeave={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = ''
+              }}
+            >
+              {l.label}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="px-5 py-4 border-t" style={{ borderColor: 'var(--navy-light)' }}>
+        <p className="text-xs font-medium text-white truncate">{profile.name}</p>
+        <button
+          onClick={handleLogout}
+          className="mt-1 text-xs transition-colors"
+          style={{ color: 'rgba(255,255,255,0.5)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)' }}
+        >
+          Sair
+        </button>
+      </div>
+    </aside>
   )
 }

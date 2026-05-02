@@ -16,7 +16,6 @@ export default async function DefectDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  try {
   const { id } = await params
   const supabase = await createClient()
   const {
@@ -200,14 +199,4 @@ export default async function DefectDetailPage({
       </div>
     </div>
   )
-  } catch (err: unknown) {
-    return (
-      <div className="max-w-2xl mx-auto p-6 space-y-3">
-        <h2 className="text-red-600 font-bold">Erro de diagnóstico</h2>
-        <pre className="bg-red-50 border border-red-200 p-4 rounded text-xs overflow-auto whitespace-pre-wrap">
-          {err instanceof Error ? `${err.name}: ${err.message}\n\n${err.stack}` : String(err)}
-        </pre>
-      </div>
-    )
-  }
 }

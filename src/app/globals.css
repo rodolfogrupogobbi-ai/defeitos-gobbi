@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+:root {
+  --navy: #1e3a5f;
+  --navy-light: #2a4f80;
+  --navy-dark: #152b47;
+  --orange: #f97316;
+  --orange-light: #fb923c;
+  --orange-dark: #ea6c0a;
+  --sidebar-width: 220px;
+}
