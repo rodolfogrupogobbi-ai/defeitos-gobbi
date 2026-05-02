@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -16,6 +16,10 @@ export default function LoginPage() {
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null)
   const [lockoutCountdown, setLockoutCountdown] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [])
 
   function startLockout() {
     const until = Date.now() + LOCKOUT_SECONDS * 1000
@@ -63,6 +67,7 @@ export default function LoginPage() {
         router.push('/verificar-dispositivo')
       }
     } catch {
+      setLoading(false)
       router.push('/kanban')
     }
   }
