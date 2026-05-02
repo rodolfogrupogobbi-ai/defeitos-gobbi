@@ -33,7 +33,28 @@
       "PowerShell(node \"C:\\\\Users\\\\rodol\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\@anthropic-ai\\\\claude-code\\\\cli.js\" mcp add -s user supabase -- npx \"-y\" \"@supabase/mcp-server-supabase@latest\" \"--project-ref\" \"vwkkmdeibwdrsywramfy\" \"--access-token\" \"sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096\" 2>&1)",
       "PowerShell(npm list -g --depth=0 2>&1)",
       "PowerShell(& \"C:\\\\Users\\\\rodol\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\@anthropic-ai\\\\claude-code\\\\bin\\\\claude.exe\" mcp add -s user supabase npx -- -y \"@supabase/mcp-server-supabase@latest\" --project-ref vwkkmdeibwdrsywramfy --access-token sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096 2>&1)",
-      "PowerShell($pat = \"sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096\"; $ref = \"vwkkmdeibwdrsywramfy\"; $r = Invoke-WebRequest -Uri \"https://api.supabase.com/v1/projects/$ref/database/query\" -Method GET -Headers @{\"Authorization\"=\"Bearer $pat\"} -ErrorAction SilentlyContinue; Write-Output \"Status: $\\($r.StatusCode\\)\")"
+      "PowerShell($pat = \"sbp_c5dc131a4a51ea281e33a3e8d2a8a234cb447096\"; $ref = \"vwkkmdeibwdrsywramfy\"; $r = Invoke-WebRequest -Uri \"https://api.supabase.com/v1/projects/$ref/database/query\" -Method GET -Headers @{\"Authorization\"=\"Bearer $pat\"} -ErrorAction SilentlyContinue; Write-Output \"Status: $\\($r.StatusCode\\)\")",
+      "PowerShell(vercel whoami --token 2>&1; Get-ChildItem \"$env:USERPROFILE\\\\AppData\\\\Roaming\\\\com.vercel.cli\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "PowerShell(dir \"$env:APPDATA\\\\com.vercel.cli\" -ErrorAction SilentlyContinue)",
+      "PowerShell(dir \"$env:APPDATA\\\\com.vercel.cli\\\\Data\" | Select-Object Name; Get-Content \"$env:APPDATA\\\\com.vercel.cli\\\\Data\\\\auth.json\" -ErrorAction SilentlyContinue | Select-Object -First 5)",
+      "Bash(bash \"C:\\\\Users\\\\rodol\\\\.claude\\\\plugins\\\\cache\\\\superpowers-marketplace\\\\superpowers\\\\5.0.7\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"C:\\\\Users\\\\rodol\\\\defeitos-gobbi\")",
+      "WebSearch",
+      "Bash(npm run *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\); console.log\\('typescript:', p.devDependencies.typescript\\)\")",
+      "Bash(node -e ' *)",
+      "PowerShell(supabase --version 2>&1)",
+      "PowerShell(npx supabase --version 2>&1)",
+      "PowerShell(vercel env add RESEND_API_KEY production --token $token 2>&1)",
+      "PowerShell(head -20)",
+      "PowerShell($token = \"vca_2PflLmSM1qdd3Uy8R8bUvbbbGufMBgggkf4YgDJXCXodXAbYYb3im670\")",
+      "Bash(python -m json.tool)",
+      "Bash(ls *.ts *.js)",
+      "Bash(ls src/*.ts src/*.js)",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)",
+      "Bash(xargs grep *)",
+      "Bash(git push *)",
+      "Bash(git rm *)"
     ]
   }
 }
