@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { maskPhone } from '@/lib/mask-phone'
 
 interface Props {
-  phone: string
+  phone: string | null | undefined
   className?: string
 }
 

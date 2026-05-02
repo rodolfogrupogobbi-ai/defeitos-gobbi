@@ -52,11 +52,9 @@ export default async function DefectDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const defectData = defect as any
 
-  const { data: brandContacts } = await supabase
-    .from('brand_contacts')
-    .select('*')
-    .eq('brand_id', defectData.brand_id)
-    .order('name')
+  const { data: brandContacts } = defectData.brand_id
+    ? await supabase.from('brand_contacts').select('*').eq('brand_id', defectData.brand_id).order('name')
+    : { data: [] }
   const alert = getAlertLevel(defectData.current_stage, defectData.received_at)
 
   return (
