@@ -68,7 +68,7 @@ export default function LoginPage() {
       }
     } catch {
       setLoading(false)
-      router.push('/kanban')
+      router.push('/verificar-dispositivo')
     }
   }
 

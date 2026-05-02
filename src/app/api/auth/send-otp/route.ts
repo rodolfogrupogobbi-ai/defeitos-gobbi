@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     })
 
-    // Enviar e-mail
+    // Enviar e-mail (falha silenciosa — código já foi salvo, usuário pode tentar reenviar)
     await resend.emails.send({
       from: 'Defeitos Gobbi <onboarding@resend.dev>',
       to: user.email,
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           <p style="color: #64748b; font-size: 14px;">Válido por 10 minutos. Se não foi você, ignore este e-mail.</p>
         </div>
       `,
-    })
+    }).catch(() => {})
   }
 
   return NextResponse.json({ otp_sent: true })
