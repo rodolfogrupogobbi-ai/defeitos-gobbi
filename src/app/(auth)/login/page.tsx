@@ -1,7 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+const MAX_ATTEMPTS = 5
+const LOCKOUT_SECONDS = 30
 
 export default function LoginPage() {
   const router = useRouter()
@@ -9,20 +12,62 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [attempts, setAttempts] = useState(0)
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null)
+  const [lockoutCountdown, setLockoutCountdown] = useState(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  function startLockout() {
+    const until = Date.now() + LOCKOUT_SECONDS * 1000
+    setLockoutUntil(until)
+    setLockoutCountdown(LOCKOUT_SECONDS)
+    timerRef.current = setInterval(() => {
+      const remaining = Math.ceil((until - Date.now()) / 1000)
+      if (remaining <= 0) {
+        clearInterval(timerRef.current!)
+        setLockoutUntil(null)
+        setLockoutCountdown(0)
+        setAttempts(0)
+      } else {
+        setLockoutCountdown(remaining)
+      }
+    }, 1000)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (lockoutUntil && Date.now() < lockoutUntil) return
     setLoading(true)
     setError('')
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(`Erro: ${error.message} (${error.status ?? 'sem status'})`)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      const newAttempts = attempts + 1
+      setAttempts(newAttempts)
+      if (newAttempts >= MAX_ATTEMPTS) {
+        startLockout()
+        setError('')
+      } else {
+        setError('E-mail ou senha incorretos.')
+      }
       setLoading(false)
-    } else {
+      return
+    }
+    // Login bem-sucedido: verificar se dispositivo é confiável
+    try {
+      const res = await fetch('/api/auth/send-otp', { method: 'POST' })
+      const data = await res.json()
+      if (data.skip) {
+        router.push('/kanban')
+      } else {
+        router.push('/verificar-dispositivo')
+      }
+    } catch {
       router.push('/kanban')
     }
   }
+
+  const isLocked = lockoutUntil !== null && Date.now() < lockoutUntil
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -37,7 +82,8 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLocked}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -47,13 +93,19 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLocked}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
           </div>
+          {isLocked && (
+            <p className="text-sm text-orange-600">
+              Muitas tentativas. Aguarde {lockoutCountdown} segundos.
+            </p>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isLocked}
             className="px-6 py-3 bg-blue-600 text-white text-base font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {loading ? 'Entrando...' : 'Entrar'}
