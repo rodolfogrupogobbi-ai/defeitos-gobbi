@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       .map(
         d => `
       <tr style="border-bottom: 1px solid #e5e7eb;">
-        <td style="padding: 8px 12px; font-size: 14px;">${(d.brand as { name: string } | null)?.name ?? '—'}</td>
+        <td style="padding: 8px 12px; font-size: 14px;">${(d as any).brand?.name ?? '—'}</td>
         <td style="padding: 8px 12px; font-size: 14px;">${d.product_name}</td>
         <td style="padding: 8px 12px; font-size: 14px;">${d.client_name}</td>
         <td style="padding: 8px 12px; font-size: 14px;">${STAGE_LABELS[d.current_stage as keyof typeof STAGE_LABELS]}</td>
