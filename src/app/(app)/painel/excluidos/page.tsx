@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { canAccessDashboard } from '@/lib/permissions'
@@ -18,18 +19,26 @@ export default async function ExcluidosPage() {
 
   if (!profile || !canAccessDashboard(profile.role)) redirect('/kanban')
 
-  const { data: deleted } = await supabase
+  const admin = createAdminClient()
+
+  const { data: deleted } = await admin
     .from('defects')
-    .select(`
-      *,
-      brand:brands(name),
-      company:companies(name),
-      deleted_by_profile:profiles!deleted_by(name)
-    `)
+    .select('*, brand:brands(name), company:companies(name)')
     .not('deleted_at', 'is', null)
     .order('deleted_at', { ascending: false })
 
   const rows = (deleted ?? []) as any[]
+
+  // Fetch names of who deleted each defect
+  const deletedByIds = [...new Set(rows.map((d: any) => d.deleted_by).filter(Boolean))]
+  let profileMap: Record<string, string> = {}
+  if (deletedByIds.length > 0) {
+    const { data: profiles } = await admin
+      .from('profiles')
+      .select('id, name')
+      .in('id', deletedByIds)
+    profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.name]))
+  }
 
   return (
     <div className="space-y-6">
@@ -76,7 +85,7 @@ export default async function ExcluidosPage() {
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-500">
-                    {d.deleted_by_profile?.name ?? '—'}
+                    {profileMap[d.deleted_by] ?? '—'}
                   </td>
                 </tr>
               ))}

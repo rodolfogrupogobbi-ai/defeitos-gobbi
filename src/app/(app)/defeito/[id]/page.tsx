@@ -185,6 +185,38 @@ export default async function DefectDetailPage({
             </div>
           )}
 
+          {/* Fiscal data */}
+          {(defectData.fiscal_nf || defectData.fiscal_razao_social || defectData.fiscal_endereco ||
+            defectData.fiscal_icms !== null || defectData.fiscal_aliquota !== null ||
+            defectData.fiscal_frete !== null || defectData.fiscal_desconto !== null) && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+              <h2 className="font-semibold text-gray-900">Dados Fiscais</h2>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                {defectData.fiscal_nf && (
+                  <div><dt className="text-gray-500">Nº Nota Fiscal</dt><dd className="font-medium">{defectData.fiscal_nf}</dd></div>
+                )}
+                {defectData.fiscal_razao_social && (
+                  <div><dt className="text-gray-500">Razão Social</dt><dd className="font-medium">{defectData.fiscal_razao_social}</dd></div>
+                )}
+                {defectData.fiscal_icms !== null && (
+                  <div><dt className="text-gray-500">ICMS (%)</dt><dd className="font-medium">{defectData.fiscal_icms}</dd></div>
+                )}
+                {defectData.fiscal_aliquota !== null && (
+                  <div><dt className="text-gray-500">Alíquota (%)</dt><dd className="font-medium">{defectData.fiscal_aliquota}</dd></div>
+                )}
+                {defectData.fiscal_frete !== null && (
+                  <div><dt className="text-gray-500">Frete (R$)</dt><dd className="font-medium">{Number(defectData.fiscal_frete).toFixed(2)}</dd></div>
+                )}
+                {defectData.fiscal_desconto !== null && (
+                  <div><dt className="text-gray-500">Desconto (R$)</dt><dd className="font-medium">{Number(defectData.fiscal_desconto).toFixed(2)}</dd></div>
+                )}
+                {defectData.fiscal_endereco && (
+                  <div className="col-span-2"><dt className="text-gray-500">Endereço de Envio</dt><dd className="font-medium">{defectData.fiscal_endereco}</dd></div>
+                )}
+              </dl>
+            </div>
+          )}
+
           {/* Photos */}
           <PhotoUpload
             defectId={defectData.id}

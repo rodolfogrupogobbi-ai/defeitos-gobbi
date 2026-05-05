@@ -14,25 +14,36 @@ const MAX_PHOTOS = 3
 export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
   const [photos, setPhotos] = useState(initialPhotos)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || photos.length >= MAX_PHOTOS) return
     setUploading(true)
+    setUploadError('')
     const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `${defectId}/${Date.now()}.${ext}`
-    const { error } = await supabase.storage
+    const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
+    // Flat path (no subfolders) to avoid storage policy issues
+    const path = `${defectId}_${Date.now()}.${ext}`
+    const { error: storageError } = await supabase.storage
       .from('defect-photos')
-      .upload(path, file)
-    if (!error) {
-      const { data } = supabase.storage.from('defect-photos').getPublicUrl(path)
-      const { data: row } = await supabase
-        .from('defect_photos')
-        .insert({ defect_id: defectId, url: data.publicUrl })
-        .select()
-        .single()
-      if (row) setPhotos(prev => [...prev, row as DefectPhoto])
+      .upload(path, file, { upsert: false })
+    if (storageError) {
+      setUploadError('Erro ao enviar foto. Verifique o tamanho e tente novamente.')
+      setUploading(false)
+      e.target.value = ''
+      return
+    }
+    const { data: urlData } = supabase.storage.from('defect-photos').getPublicUrl(path)
+    const { data: row, error: dbError } = await supabase
+      .from('defect_photos')
+      .insert({ defect_id: defectId, url: urlData.publicUrl })
+      .select()
+      .single()
+    if (dbError) {
+      setUploadError('Foto enviada mas não foi possível registrá-la. Recarregue a página.')
+    } else if (row) {
+      setPhotos(prev => [...prev, row as DefectPhoto])
     }
     setUploading(false)
     e.target.value = ''
@@ -72,7 +83,7 @@ export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
           </div>
         ))}
         {photos.length < MAX_PHOTOS && (
-          <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400">
+          <label className={`flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg cursor-pointer ${uploading ? 'border-blue-300' : 'border-gray-300 hover:border-blue-400'}`}>
             <Upload size={16} className="text-gray-400" />
             <span className="text-xs text-gray-400 mt-1">
               {uploading ? 'Enviando...' : `${photos.length}/${MAX_PHOTOS}`}
@@ -87,6 +98,7 @@ export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
           </label>
         )}
       </div>
+      {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
     </div>
   )
 }

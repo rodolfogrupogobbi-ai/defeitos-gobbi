@@ -21,7 +21,6 @@ const schema = z.object({
   nf_factory: z.string().optional(),
   cod_use: z.string().optional(),
   piece_cost: z.string().optional(),
-  client_amount_paid: z.string().optional(),
   defect_type_id: z.string().min(1, 'Selecione o tipo de defeito'),
   client_name: z.string().min(1, 'Informe o nome do cliente'),
   client_phone: z.string().min(8, 'Informe o telefone'),
@@ -87,10 +86,30 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
     }
   }
 
+  async function generateProtocol(receivedAt: string): Promise<string> {
+    const supabase = createClient()
+    const date = new Date(receivedAt)
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const firstDay = `${year}-${String(month).padStart(2, '0')}-01`
+    const nextMonth = month === 12 ? 1 : month + 1
+    const nextYear = month === 12 ? year + 1 : year
+    const lastDay = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
+    const { count } = await supabase
+      .from('defects')
+      .select('*', { count: 'exact', head: true })
+      .gte('received_at', firstDay)
+      .lt('received_at', lastDay)
+    const seq = String((count ?? 0) + 1).padStart(3, '0')
+    const mm = String(month).padStart(2, '0')
+    return `${seq}${mm}${year}`
+  }
+
   async function onSubmit(data: FormData) {
     setSaving(true)
     setError('')
     const supabase = createClient()
+    const protocol_number = await generateProtocol(data.received_at)
     const { data: defect, error: err } = await supabase
       .from('defects')
       .insert({
@@ -98,9 +117,9 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
         client_code: data.client_code || null,
         nf_factory: data.nf_factory || null,
         piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
-        client_amount_paid: data.client_amount_paid ? parseFloat(data.client_amount_paid) : null,
         received_by: receivedBy,
         current_stage: 'received',
+        protocol_number,
       })
       .select()
       .single()
@@ -173,19 +192,11 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
         <Input label="Cód. Use" {...register('cod_use')} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Valor de custo da peça <span className="text-gray-400 font-normal">(R$)</span>
-          </label>
-          <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('piece_cost')} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Valor pago pelo cliente <span className="text-gray-400 font-normal">(R$)</span>
-          </label>
-          <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('client_amount_paid')} />
-        </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">
+          Valor de custo da peça <span className="text-gray-400 font-normal">(R$)</span>
+        </label>
+        <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('piece_cost')} />
       </div>
 
       <div className="flex flex-col gap-1">

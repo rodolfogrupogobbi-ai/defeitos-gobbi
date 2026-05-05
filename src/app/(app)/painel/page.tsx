@@ -83,6 +83,7 @@ export default async function PainelPage({
 
   const stageOptions = [
     { value: 'received', label: 'Recebido' },
+    { value: 'dados_fiscais', label: 'Dados Fiscais' },
     { value: 'in_progress', label: 'Processo Iniciado' },
     { value: 'photos_attached', label: 'Fotos Anexadas' },
     { value: 'awaiting_reimbursement', label: 'Aguardando Indenização' },
@@ -221,7 +222,7 @@ export default async function PainelPage({
           label="Em andamento"
           value={
             all.filter((d: any) =>
-              ['received', 'in_progress', 'photos_attached', 'awaiting_reimbursement'].includes(
+              ['received', 'dados_fiscais', 'in_progress', 'photos_attached', 'awaiting_reimbursement'].includes(
                 d.current_stage
               )
             ).length

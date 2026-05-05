@@ -8,7 +8,8 @@ import { CLOSED_STAGES, STAGE_LABELS } from '@/types'
 import type { Defect, Stage, Role, CommunicationChannel, ReimbursementMethod } from '@/types'
 
 const NEXT_STAGE: Partial<Record<Stage, Stage>> = {
-  received: 'in_progress',
+  received: 'dados_fiscais',
+  dados_fiscais: 'in_progress',
   in_progress: 'photos_attached',
   photos_attached: 'awaiting_reimbursement',
   awaiting_reimbursement: 'paid_to_client',
@@ -26,13 +27,30 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   const [open, setOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Fiscal fields (dados_fiscais stage)
+  const [fiscalIcms, setFiscalIcms] = useState('')
+  const [fiscalAliquota, setFiscalAliquota] = useState('')
+  const [fiscalFrete, setFiscalFrete] = useState('')
+  const [fiscalDesconto, setFiscalDesconto] = useState('')
+  const [fiscalNf, setFiscalNf] = useState('')
+  const [fiscalEndereco, setFiscalEndereco] = useState('')
+  const [fiscalRazaoSocial, setFiscalRazaoSocial] = useState('')
+
+  // in_progress fields
   const [channel, setChannel] = useState<CommunicationChannel>('email')
-  const [protocol, setProtocol] = useState('')
+  const [protocol, setProtocol] = useState(defect.protocol_number ?? '')
+
+  // paid_to_client fields
   const [clientPaid, setClientPaid] = useState('')
   const [clientPaidAt, setClientPaidAt] = useState('')
+
+  // reimbursed_to_store fields
   const [brandAmount, setBrandAmount] = useState('')
   const [brandAt, setBrandAt] = useState('')
   const [reimbMethod, setReimbMethod] = useState<ReimbursementMethod>('invoice')
+
+  // close fields
   const [closeStage, setCloseStage] = useState<Stage>('improcedente')
   const [closeNotes, setCloseNotes] = useState('')
 
@@ -63,9 +81,19 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updates: Record<string, any> = { current_stage: nextStage }
+
+    if (nextStage === 'dados_fiscais') {
+      if (fiscalIcms) updates.fiscal_icms = parseFloat(fiscalIcms)
+      if (fiscalAliquota) updates.fiscal_aliquota = parseFloat(fiscalAliquota)
+      if (fiscalFrete) updates.fiscal_frete = parseFloat(fiscalFrete)
+      if (fiscalDesconto) updates.fiscal_desconto = parseFloat(fiscalDesconto)
+      if (fiscalNf) updates.fiscal_nf = fiscalNf
+      if (fiscalEndereco) updates.fiscal_endereco = fiscalEndereco
+      if (fiscalRazaoSocial) updates.fiscal_razao_social = fiscalRazaoSocial
+    }
     if (nextStage === 'in_progress') {
       updates.communication_channel = channel
-      updates.protocol_number = protocol
+      if (protocol) updates.protocol_number = protocol
     }
     if (nextStage === 'paid_to_client') {
       updates.client_amount_paid = parseFloat(clientPaid)
@@ -76,6 +104,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       updates.brand_reimbursed_at = brandAt
       updates.reimbursement_method = reimbMethod
     }
+
     await supabase.from('defects').update(updates).eq('id', defect.id)
     await supabase.from('defect_history').insert({
       defect_id: defect.id,
@@ -136,115 +165,121 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
         title={`Avançar para: ${nextStage ? STAGE_LABELS[nextStage] : ''}`}
       >
         <div className="flex flex-col gap-4">
+          {nextStage === 'dados_fiscais' && (
+            <>
+              <p className="text-sm text-gray-500">Todos os campos são opcionais. Preencha os dados disponíveis para emissão da NF.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">ICMS (%)</label>
+                  <input type="number" step="0.01" value={fiscalIcms} onChange={e => setFiscalIcms(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Ex: 12" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Alíquota (%)</label>
+                  <input type="number" step="0.01" value={fiscalAliquota} onChange={e => setFiscalAliquota(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Ex: 7" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Frete (R$)</label>
+                  <input type="number" step="0.01" value={fiscalFrete} onChange={e => setFiscalFrete(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="0,00" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Desconto (R$)</label>
+                  <input type="number" step="0.01" value={fiscalDesconto} onChange={e => setFiscalDesconto(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="0,00" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Número da Nota Fiscal</label>
+                <input value={fiscalNf} onChange={e => setFiscalNf(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Ex: 000123" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Razão Social da Empresa</label>
+                <input value={fiscalRazaoSocial} onChange={e => setFiscalRazaoSocial(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Endereço de Envio</label>
+                <input value={fiscalEndereco} onChange={e => setFiscalEndereco(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+            </>
+          )}
+
           {nextStage === 'in_progress' && (
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Canal de comunicação</label>
-                <select
-                  value={channel}
-                  onChange={e => setChannel(e.target.value as CommunicationChannel)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
-                >
+                <select value={channel} onChange={e => setChannel(e.target.value as CommunicationChannel)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
                   <option value="email">E-mail</option>
                   <option value="whatsapp">WhatsApp</option>
                   <option value="system">Sistema da marca</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Protocolo / número</label>
-                <input
-                  value={protocol}
-                  onChange={e => setProtocol(e.target.value)}
+                <label className="text-sm font-medium text-gray-700">Protocolo</label>
+                <input value={protocol} onChange={e => setProtocol(e.target.value)}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
+                  placeholder="Gerado automaticamente no cadastro" />
               </div>
             </>
           )}
+
           {nextStage === 'paid_to_client' && (
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Valor pago ao cliente (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={clientPaid}
-                  onChange={e => setClientPaid(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  required
-                />
+                <input type="number" step="0.01" value={clientPaid} onChange={e => setClientPaid(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Data do pagamento</label>
-                <input
-                  type="date"
-                  value={clientPaidAt}
-                  onChange={e => setClientPaidAt(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  required
-                />
+                <input type="date" value={clientPaidAt} onChange={e => setClientPaidAt(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
               </div>
             </>
           )}
+
           {nextStage === 'reimbursed_to_store' && (
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Valor recebido da marca (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={brandAmount}
-                  onChange={e => setBrandAmount(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  required
-                />
+                <input type="number" step="0.01" value={brandAmount} onChange={e => setBrandAmount(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Data do recebimento</label>
-                <input
-                  type="date"
-                  value={brandAt}
-                  onChange={e => setBrandAt(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  required
-                />
+                <input type="date" value={brandAt} onChange={e => setBrandAt(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">Forma</label>
-                <select
-                  value={reimbMethod}
-                  onChange={e => setReimbMethod(e.target.value as ReimbursementMethod)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
-                >
+                <select value={reimbMethod} onChange={e => setReimbMethod(e.target.value as ReimbursementMethod)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
                   <option value="invoice">Nota Fiscal</option>
                   <option value="bank_transfer">Conta Corrente</option>
                 </select>
               </div>
             </>
           )}
-          <button
-            onClick={advance}
-            disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
+
+          <button onClick={advance} disabled={saving}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50">
             {saving ? 'Salvando...' : 'Confirmar'}
           </button>
         </div>
       </Modal>
 
       {/* Close modal */}
-      <Modal
-        open={closeOpen}
-        onClose={() => setCloseOpen(false)}
-        title="Encerrar defeito"
-      >
+      <Modal open={closeOpen} onClose={() => setCloseOpen(false)} title="Encerrar defeito">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Desfecho</label>
-            <select
-              value={closeStage}
-              onChange={e => setCloseStage(e.target.value as Stage)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
-            >
+            <select value={closeStage} onChange={e => setCloseStage(e.target.value as Stage)}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
               <option value="improcedente">Improcedente</option>
               <option value="doacao">Doação</option>
               <option value="nao_enviado">Não enviado</option>
@@ -252,19 +287,12 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Observação *</label>
-            <textarea
-              value={closeNotes}
-              onChange={e => setCloseNotes(e.target.value)}
-              rows={3}
+            <textarea value={closeNotes} onChange={e => setCloseNotes(e.target.value)} rows={3}
               className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-              placeholder="Descreva o motivo do encerramento..."
-            />
+              placeholder="Descreva o motivo do encerramento..." />
           </div>
-          <button
-            onClick={closeDefect}
-            disabled={saving || !closeNotes.trim()}
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50"
-          >
+          <button onClick={closeDefect} disabled={saving || !closeNotes.trim()}
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Encerrando...' : 'Confirmar Encerramento'}
           </button>
         </div>

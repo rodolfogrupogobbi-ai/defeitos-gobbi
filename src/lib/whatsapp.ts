@@ -19,5 +19,6 @@ export function renderTemplate(template: string, vars: TemplateVars): string {
 
 export function buildWhatsAppUrl(phone: string, message: string): string {
   const cleaned = phone.replace(/\D/g, '')
-  return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`
+  const normalized = message.normalize('NFC')
+  return `https://wa.me/55${cleaned}?text=${encodeURIComponent(normalized)}`
 }

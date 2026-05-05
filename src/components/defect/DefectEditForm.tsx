@@ -20,7 +20,6 @@ const schema = z.object({
   nf_factory: z.string().optional(),
   cod_use: z.string().optional(),
   piece_cost: z.string().optional(),
-  client_amount_paid: z.string().optional(),
   defect_type_id: z.string().min(1, 'Selecione o tipo de defeito'),
   client_name: z.string().min(1, 'Informe o nome do cliente'),
   client_phone: z.string().min(8, 'Informe o telefone'),
@@ -58,7 +57,6 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
       nf_factory: defect.nf_factory ?? '',
       cod_use: defect.cod_use ?? '',
       piece_cost: defect.piece_cost != null ? String(defect.piece_cost) : '',
-      client_amount_paid: defect.client_amount_paid != null ? String(defect.client_amount_paid) : '',
       defect_type_id: defect.defect_type_id,
       client_name: defect.client_name,
       client_phone: defect.client_phone,
@@ -82,7 +80,6 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
         cod_use: data.cod_use || null,
         client_code: data.client_code || null,
         piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
-        client_amount_paid: data.client_amount_paid ? parseFloat(data.client_amount_paid) : null,
       }),
     })
     const result = await res.json()
@@ -133,19 +130,11 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
         <Input label="Cód. Use" {...register('cod_use')} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Valor de custo da peça <span className="text-gray-400 font-normal">(R$)</span>
-          </label>
-          <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('piece_cost')} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Valor pago pelo cliente <span className="text-gray-400 font-normal">(R$)</span>
-          </label>
-          <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('client_amount_paid')} />
-        </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">
+          Valor de custo da peça <span className="text-gray-400 font-normal">(R$)</span>
+        </label>
+        <Input type="number" step="0.01" min="0" placeholder="0,00" {...register('piece_cost')} />
       </div>
 
       <Select

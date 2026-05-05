@@ -2,6 +2,7 @@ export type Role = 'admin' | 'cashier'
 
 export type Stage =
   | 'received'
+  | 'dados_fiscais'
   | 'in_progress'
   | 'photos_attached'
   | 'awaiting_reimbursement'
@@ -17,18 +18,19 @@ export type WhatsAppTemplateStage = 'received' | 'awaiting_reimbursement' | 'pai
 
 export const STAGE_LABELS: Record<Stage, string> = {
   received: 'Recebido',
+  dados_fiscais: 'Dados Fiscais',
   in_progress: 'Processo Iniciado',
   photos_attached: 'Fotos Anexadas',
-  awaiting_reimbursement: 'Aguardando Indenizacao',
+  awaiting_reimbursement: 'Aguardando Indenização',
   paid_to_client: 'Pago ao Cliente',
-  reimbursed_to_store: 'Indenizado a Loja',
+  reimbursed_to_store: 'Indenizado à Loja',
   improcedente: 'Improcedente',
-  doacao: 'Doacao',
-  nao_enviado: 'Nao Enviado',
+  doacao: 'Doação',
+  nao_enviado: 'Não Enviado',
 }
 
 export const ACTIVE_STAGES: Stage[] = [
-  'received', 'in_progress', 'photos_attached',
+  'received', 'dados_fiscais', 'in_progress', 'photos_attached',
   'awaiting_reimbursement', 'paid_to_client', 'reimbursed_to_store',
 ]
 
@@ -90,6 +92,13 @@ export interface Defect {
   brand_reimbursed_at: string | null
   reimbursement_method: ReimbursementMethod | null
   resolution_notes: string | null
+  fiscal_icms: number | null
+  fiscal_aliquota: number | null
+  fiscal_frete: number | null
+  fiscal_desconto: number | null
+  fiscal_nf: string | null
+  fiscal_endereco: string | null
+  fiscal_razao_social: string | null
   deleted_at: string | null
   deleted_by: string | null
   created_at: string
