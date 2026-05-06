@@ -27,6 +27,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   const [open, setOpen] = useState(false)
   const [closeOpen, setCloseOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   // Fiscal fields (dados_fiscais stage)
   const [fiscalIcms, setFiscalIcms] = useState('')
@@ -105,7 +106,13 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       updates.reimbursement_method = reimbMethod
     }
 
-    await supabase.from('defects').update(updates).eq('id', defect.id)
+    setSaveError('')
+    const { error: updateError } = await supabase.from('defects').update(updates).eq('id', defect.id)
+    if (updateError) {
+      setSaveError(`Erro ao avançar: ${updateError.message}`)
+      setSaving(false)
+      return
+    }
     await supabase.from('defect_history').insert({
       defect_id: defect.id,
       from_stage: defect.current_stage,
@@ -266,6 +273,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
             </>
           )}
 
+          {saveError && <p className="text-xs text-red-600">{saveError}</p>}
           <button onClick={advance} disabled={saving}
             className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50">
             {saving ? 'Salvando...' : 'Confirmar'}

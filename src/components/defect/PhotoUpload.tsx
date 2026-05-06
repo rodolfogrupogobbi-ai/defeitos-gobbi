@@ -29,7 +29,7 @@ export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
       .from('defect-photos')
       .upload(path, file, { upsert: false })
     if (storageError) {
-      setUploadError('Erro ao enviar foto. Verifique o tamanho e tente novamente.')
+      setUploadError(`Erro ao enviar foto: ${storageError.message}`)
       setUploading(false)
       e.target.value = ''
       return
