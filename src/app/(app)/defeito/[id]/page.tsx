@@ -125,6 +125,12 @@ export default async function DefectDetailPage({
               </div>
             ))}
           </dl>
+          {defectData.notes && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-500 mb-1">Observações</p>
+              <p className="text-sm text-gray-700">{defectData.notes}</p>
+            </div>
+          )}
           {defectData.resolution_notes && (
             <div className="mt-2 p-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 mb-1">Observações de encerramento</p>

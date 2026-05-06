@@ -25,6 +25,7 @@ const schema = z.object({
   client_name: z.string().min(1, 'Informe o nome do cliente'),
   client_phone: z.string().min(8, 'Informe o telefone'),
   client_code: z.string().optional(),
+  notes: z.string().optional(),
   received_at: z.string().min(1, 'Informe a data'),
 })
 type FormData = z.infer<typeof schema>
@@ -116,6 +117,7 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
         ...data,
         client_code: data.client_code || null,
         nf_factory: data.nf_factory || null,
+        notes: data.notes || null,
         piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
         received_by: receivedBy,
         current_stage: 'received',
@@ -245,6 +247,18 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
         <Input
           {...register('client_code')}
           placeholder="Opcional — código do cliente no sistema da loja"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">
+          Observações <span className="text-gray-400 font-normal">(opcional)</span>
+        </label>
+        <textarea
+          {...register('notes')}
+          rows={3}
+          placeholder="Detalhes adicionais sobre o defeito ou situação do cliente..."
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm resize-none"
         />
       </div>
 

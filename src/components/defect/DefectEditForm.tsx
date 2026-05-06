@@ -20,6 +20,7 @@ const schema = z.object({
   nf_factory: z.string().optional(),
   cod_use: z.string().optional(),
   piece_cost: z.string().optional(),
+  notes: z.string().optional(),
   defect_type_id: z.string().min(1, 'Selecione o tipo de defeito'),
   client_name: z.string().min(1, 'Informe o nome do cliente'),
   client_phone: z.string().min(8, 'Informe o telefone'),
@@ -57,6 +58,7 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
       nf_factory: defect.nf_factory ?? '',
       cod_use: defect.cod_use ?? '',
       piece_cost: defect.piece_cost != null ? String(defect.piece_cost) : '',
+      notes: defect.notes ?? '',
       defect_type_id: defect.defect_type_id,
       client_name: defect.client_name,
       client_phone: defect.client_phone,
@@ -79,6 +81,7 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
         nf_factory: data.nf_factory || null,
         cod_use: data.cod_use || null,
         client_code: data.client_code || null,
+        notes: data.notes || null,
         piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
       }),
     })
@@ -163,6 +166,18 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
           Código do cliente <span className="text-gray-400 font-normal">(PDV)</span>
         </label>
         <Input {...register('client_code')} placeholder="Opcional" />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">
+          Observações <span className="text-gray-400 font-normal">(opcional)</span>
+        </label>
+        <textarea
+          {...register('notes')}
+          rows={3}
+          placeholder="Detalhes adicionais sobre o defeito ou situação do cliente..."
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm resize-none"
+        />
       </div>
 
       <Input

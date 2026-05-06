@@ -15,6 +15,7 @@ export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
   const [photos, setPhotos] = useState(initialPhotos)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [lightbox, setLightbox] = useState<string | null>(null)
 
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -23,7 +24,6 @@ export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
     setUploadError('')
     const supabase = createClient()
     const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
-    // Flat path (no subfolders) to avoid storage policy issues
     const path = `${defectId}_${Date.now()}.${ext}`
     const { error: storageError } = await supabase.storage
       .from('defect-photos')
@@ -63,42 +63,65 @@ export function PhotoUpload({ defectId, photos: initialPhotos }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-      <h2 className="font-semibold text-gray-900">Fotos</h2>
-      <div className="flex flex-wrap gap-2">
-        {photos.map(photo => (
-          <div key={photo.id} className="relative w-24 h-24">
-            <img
-              src={photo.url}
-              alt="Foto do defeito"
-              className="w-full h-full object-cover rounded-lg"
-            />
-            <button
-              type="button"
-              onClick={() => handleRemove(photo)}
-              className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5"
-            >
-              <X size={10} />
-            </button>
-          </div>
-        ))}
-        {photos.length < MAX_PHOTOS && (
-          <label className={`flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg cursor-pointer ${uploading ? 'border-blue-300' : 'border-gray-300 hover:border-blue-400'}`}>
-            <Upload size={16} className="text-gray-400" />
-            <span className="text-xs text-gray-400 mt-1">
-              {uploading ? 'Enviando...' : `${photos.length}/${MAX_PHOTOS}`}
-            </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleChange}
-              disabled={uploading}
-            />
-          </label>
-        )}
+    <>
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+        <h2 className="font-semibold text-gray-900">Fotos</h2>
+        <div className="flex flex-wrap gap-2">
+          {photos.map(photo => (
+            <div key={photo.id} className="relative w-24 h-24">
+              <img
+                src={photo.url}
+                alt="Foto do defeito"
+                className="w-full h-full object-cover rounded-lg cursor-zoom-in"
+                onClick={() => setLightbox(photo.url)}
+              />
+              <button
+                type="button"
+                onClick={() => handleRemove(photo)}
+                className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <label className={`flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg cursor-pointer ${uploading ? 'border-blue-300' : 'border-gray-300 hover:border-blue-400'}`}>
+              <Upload size={16} className="text-gray-400" />
+              <span className="text-xs text-gray-400 mt-1">
+                {uploading ? 'Enviando...' : `${photos.length}/${MAX_PHOTOS}`}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleChange}
+                disabled={uploading}
+              />
+            </label>
+          )}
+        </div>
+        {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
       </div>
-      {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
-    </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white bg-black/40 rounded-full p-1.5 hover:bg-black/60"
+            onClick={() => setLightbox(null)}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={lightbox}
+            alt="Foto ampliada"
+            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
   )
 }

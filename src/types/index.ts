@@ -91,6 +91,7 @@ export interface Defect {
   brand_reimbursement_amount: number | null
   brand_reimbursed_at: string | null
   reimbursement_method: ReimbursementMethod | null
+  notes: string | null
   resolution_notes: string | null
   fiscal_icms: number | null
   fiscal_aliquota: number | null
