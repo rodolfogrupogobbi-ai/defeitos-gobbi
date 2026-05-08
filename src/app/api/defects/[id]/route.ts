@@ -16,6 +16,7 @@ export async function PATCH(
     'nf_number', 'nf_factory', 'cod_use', 'piece_cost', 'client_amount_paid',
     'defect_type_id', 'client_name', 'client_phone', 'client_code', 'received_at',
     'notes', 'client_resolution_type', 'received_by_name',
+    'reimbursement_nf_number', 'boleto_number', 'boleto_original_value', 'boleto_updated_value',
     'fiscal_icms', 'fiscal_aliquota', 'fiscal_frete', 'fiscal_desconto',
     'fiscal_nf', 'fiscal_endereco', 'fiscal_razao_social',
   ]

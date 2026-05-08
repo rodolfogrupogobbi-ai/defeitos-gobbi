@@ -16,7 +16,7 @@ export function AppNav({ profile }: { profile: Profile }) {
   }
 
   const links = [
-    { href: '/kanban', label: 'Kanban', show: true },
+    { href: '/kanban', label: 'Visão Geral', show: true },
     { href: '/painel', label: 'Painel Gerencial', show: canAccessDashboard(profile.role) },
     { href: '/cadastros/marcas', label: 'Cadastros', show: canManageCatalog(profile.role) },
   ]

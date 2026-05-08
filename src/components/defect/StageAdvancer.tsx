@@ -11,10 +11,10 @@ import type { Defect, Stage, Role, CommunicationChannel, WhatsAppTemplateStage }
 const WA_REMINDER_STAGES: Stage[] = ['awaiting_reimbursement', 'paid_to_client']
 
 const ADVANCE_ACTION_LABELS: Partial<Record<Stage, string>> = {
-  received:                  'Registrar Dados Fiscais',
+  received:                  'Confirmar Fotos Anexadas',
+  photos_attached:           'Registrar Dados Fiscais',
   dados_fiscais:             'Iniciar Processo com a Marca',
-  in_progress:               'Confirmar Fotos Anexadas',
-  photos_attached:           'Encaminhar à Marca',
+  in_progress:               'Encaminhar à Marca',
   aguardando_retorno_marca:  'Emitir Nota Fiscal',
   emissao_nf:                'Confirmar NF — Aguardar Pagamento',
   awaiting_reimbursement:    'Registrar Resolução com o Cliente',
@@ -22,10 +22,10 @@ const ADVANCE_ACTION_LABELS: Partial<Record<Stage, string>> = {
 }
 
 const NEXT_STAGE: Partial<Record<Stage, Stage>> = {
-  received: 'dados_fiscais',
+  received: 'photos_attached',
+  photos_attached: 'dados_fiscais',
   dados_fiscais: 'in_progress',
-  in_progress: 'photos_attached',
-  photos_attached: 'aguardando_retorno_marca',
+  in_progress: 'aguardando_retorno_marca',
   aguardando_retorno_marca: 'emissao_nf',
   emissao_nf: 'awaiting_reimbursement',
   awaiting_reimbursement: 'paid_to_client',
@@ -79,6 +79,10 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   const [brandAt, setBrandAt] = useState('')
   const [reimbMethod, setReimbMethod] = useState('invoice')
   const [reimbMethodCustom, setReimbMethodCustom] = useState('')
+  const [reimbNfNumber, setReimbNfNumber] = useState('')
+  const [boletoNumber, setBoletoNumber] = useState('')
+  const [boletoOriginalValue, setBoletoOriginalValue] = useState('')
+  const [boletoUpdatedValue, setBoletoUpdatedValue] = useState('')
 
   // close fields
   const [closeStage, setCloseStage] = useState<Stage>('improcedente')
@@ -174,6 +178,12 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       updates.brand_reimbursement_amount = parseFloat(brandAmount)
       updates.brand_reimbursed_at = brandAt
       updates.reimbursement_method = reimbMethod === 'outro' ? reimbMethodCustom : reimbMethod
+      if (reimbMethod === 'invoice' && reimbNfNumber) updates.reimbursement_nf_number = reimbNfNumber
+      if (reimbMethod === 'desconto_boleto') {
+        if (boletoNumber) updates.boleto_number = boletoNumber
+        if (boletoOriginalValue) updates.boleto_original_value = parseFloat(boletoOriginalValue)
+        if (boletoUpdatedValue) updates.boleto_updated_value = parseFloat(boletoUpdatedValue)
+      }
     }
 
     const { error: updateError } = await supabase.from('defects').update(updates).eq('id', defect.id)
@@ -422,6 +432,36 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
                     className="rounded-md border border-gray-300 px-3 py-2 text-sm"
                     placeholder="Ex: Crédito em nota futura" />
                 </div>
+              )}
+              {reimbMethod === 'invoice' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">Número da NF de reembolso</label>
+                  <input value={reimbNfNumber} onChange={e => setReimbNfNumber(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Ex: 000456" />
+                </div>
+              )}
+              {reimbMethod === 'desconto_boleto' && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Número do boleto</label>
+                    <input value={boletoNumber} onChange={e => setBoletoNumber(e.target.value)}
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Código ou identificador do boleto" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">Valor original (R$)</label>
+                      <input type="number" step="0.01" value={boletoOriginalValue} onChange={e => setBoletoOriginalValue(e.target.value)}
+                        className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-gray-700">Valor atualizado (R$)</label>
+                      <input type="number" step="0.01" value={boletoUpdatedValue} onChange={e => setBoletoUpdatedValue(e.target.value)}
+                        className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                    </div>
+                  </div>
+                </>
               )}
             </>
           )}

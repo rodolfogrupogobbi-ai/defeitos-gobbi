@@ -213,6 +213,24 @@ export default async function DefectDetailPage({
                   )}
                 </p>
               )}
+              {defectData.reimbursement_nf_number && (
+                <p className="text-sm">
+                  NF de reembolso: <strong>{defectData.reimbursement_nf_number}</strong>
+                </p>
+              )}
+              {defectData.boleto_number && (
+                <p className="text-sm">Boleto: <strong>{defectData.boleto_number}</strong></p>
+              )}
+              {defectData.boleto_original_value !== null && (
+                <p className="text-sm">
+                  Valor original do boleto: <strong>R$ {Number(defectData.boleto_original_value).toFixed(2)}</strong>
+                </p>
+              )}
+              {defectData.boleto_updated_value !== null && (
+                <p className="text-sm">
+                  Valor atualizado do boleto: <strong>R$ {Number(defectData.boleto_updated_value).toFixed(2)}</strong>
+                </p>
+              )}
             </div>
           )}
 

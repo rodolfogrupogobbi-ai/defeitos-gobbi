@@ -17,7 +17,7 @@ export default async function KanbanPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 mb-4">Kanban de Defeitos</h1>
+      <h1 className="text-xl font-bold text-gray-900 mb-4">Visão Geral</h1>
       <KanbanBoard defects={defects ?? []} />
     </div>
   )

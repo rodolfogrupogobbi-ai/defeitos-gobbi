@@ -49,7 +49,7 @@ export const STAGE_LABELS: Record<Stage, string> = {
 }
 
 export const ACTIVE_STAGES: Stage[] = [
-  'received', 'dados_fiscais', 'in_progress', 'photos_attached',
+  'received', 'photos_attached', 'dados_fiscais', 'in_progress',
   'aguardando_retorno_marca', 'emissao_nf',
   'awaiting_reimbursement', 'paid_to_client', 'reimbursed_to_store',
 ]
@@ -113,6 +113,10 @@ export interface Defect {
   brand_reimbursement_amount: number | null
   brand_reimbursed_at: string | null
   reimbursement_method: ReimbursementMethod | null
+  reimbursement_nf_number: string | null
+  boleto_number: string | null
+  boleto_original_value: number | null
+  boleto_updated_value: number | null
   notes: string | null
   resolution_notes: string | null
   fiscal_icms: number | null

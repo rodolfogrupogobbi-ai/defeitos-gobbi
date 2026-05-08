@@ -38,7 +38,7 @@ export function DeleteDefectButton({ defectId }: { defectId: string }) {
           <div className="bg-white rounded-xl p-6 w-80 space-y-4 shadow-xl">
             <h3 className="font-semibold text-gray-900">Excluir defeito?</h3>
             <p className="text-sm text-gray-600">
-              O defeito será marcado como excluído e não aparecerá mais no kanban nem no painel.
+              O defeito será marcado como excluído e não aparecerá mais na Visão Geral nem no painel.
               Ficará registrado no relatório de excluídos.
             </p>
             {error && <p className="text-sm text-red-600">{error}</p>}
