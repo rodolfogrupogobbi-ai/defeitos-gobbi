@@ -8,11 +8,17 @@ export default async function KanbanPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const cutoff = thirtyDaysAgo.toISOString()
+
   const { data: defects } = await supabase
     .from('defects')
     .select('*, company:companies(*), brand:brands(*), defect_type:defect_types(*)')
     .in('current_stage', ACTIVE_STAGES)
     .is('deleted_at', null)
+    // Hide reimbursed_to_store defects older than 30 days — they live in reports only
+    .or(`current_stage.neq.reimbursed_to_store,brand_reimbursed_at.gte.${cutoff}`)
     .order('received_at', { ascending: true })
 
   return (
