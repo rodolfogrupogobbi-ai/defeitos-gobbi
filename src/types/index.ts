@@ -99,6 +99,7 @@ export interface Defect {
   client_phone: string
   client_code: string | null
   received_by: string
+  received_by_name: string | null
   received_at: string
   current_stage: Stage
   communication_channel: CommunicationChannel | null

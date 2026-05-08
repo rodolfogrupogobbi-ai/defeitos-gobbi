@@ -127,7 +127,7 @@ export default async function DefectDetailPage({
                 'Recebido em',
                 format(new Date(defectData.received_at), 'dd/MM/yyyy', { locale: ptBR }),
               ],
-              ['Recebido por', defectData.received_by_profile?.name],
+              ['Recebido por', defectData.received_by_name ?? defectData.received_by_profile?.name],
               ['Canal', defectData.communication_channel ?? '—'],
               ['Protocolo', defectData.protocol_number ?? '—'],
               ...(defectData.client_code ? [['Cód. cliente (PDV)', defectData.client_code]] : []),

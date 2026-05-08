@@ -3,9 +3,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Modal } from '@/components/ui/Modal'
+import { WhatsAppReminderModal } from '@/components/defect/WhatsAppReminderModal'
 import { canAdvanceToStage5 } from '@/lib/permissions'
 import { CLOSED_STAGES, STAGE_LABELS } from '@/types'
-import type { Defect, Stage, Role, CommunicationChannel } from '@/types'
+import type { Defect, Stage, Role, CommunicationChannel, WhatsAppTemplateStage } from '@/types'
+
+const WA_REMINDER_STAGES: Stage[] = ['awaiting_reimbursement', 'paid_to_client']
 
 const ADVANCE_ACTION_LABELS: Partial<Record<Stage, string>> = {
   received:                  'Registrar Dados Fiscais',
@@ -80,6 +83,9 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   // close fields
   const [closeStage, setCloseStage] = useState<Stage>('improcedente')
   const [closeNotes, setCloseNotes] = useState('')
+
+  // WhatsApp reminder after advancing to a template stage
+  const [waReminderStage, setWaReminderStage] = useState<WhatsAppTemplateStage | null>(null)
 
   const nextStage = NEXT_STAGE[defect.current_stage]
   const isFinished =
@@ -184,7 +190,11 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
     })
     setSaving(false)
     setOpen(false)
-    router.refresh()
+    if (WA_REMINDER_STAGES.includes(nextStage)) {
+      setWaReminderStage(nextStage as WhatsAppTemplateStage)
+    } else {
+      router.refresh()
+    }
   }
 
   async function closeDefect() {
@@ -423,6 +433,29 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
           </button>
         </div>
       </Modal>
+
+      {/* WhatsApp reminder */}
+      {waReminderStage && (
+        <WhatsAppReminderModal
+          open={true}
+          defectId={defect.id}
+          phone={defect.client_phone}
+          stage={waReminderStage}
+          userId={userId}
+          templateVars={{
+            client_name: defect.client_name,
+            product_name: defect.product_name,
+            brand: defect.brand?.name ?? '',
+            company: defect.company?.name ?? '',
+            received_at: new Date(defect.received_at).toLocaleDateString('pt-BR'),
+            protocol: defect.protocol_number ?? 'sem protocolo',
+          }}
+          onDone={() => {
+            setWaReminderStage(null)
+            router.refresh()
+          }}
+        />
+      )}
 
       {/* Close modal */}
       <Modal open={closeOpen} onClose={() => setCloseOpen(false)} title="Encerrar defeito">

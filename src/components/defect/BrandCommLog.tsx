@@ -28,12 +28,13 @@ export function BrandCommLog({ defectId, userId, initialComms }: Props) {
     const { data, error: err } = await supabase
       .from('defect_brand_comms')
       .insert({ defect_id: defectId, comm_date: date, notes: notes.trim(), created_by: userId })
-      .select('*, created_by_profile:profiles!created_by(*)')
+      .select()
       .single()
     if (err) {
       setError('Erro ao salvar. Tente novamente.')
     } else if (data) {
-      setComms(prev => [...prev, data as DefectBrandComm])
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      setComms(prev => [...prev, { ...data, created_by_profile: profileData ?? undefined } as DefectBrandComm])
       setNotes('')
       setDate(new Date().toISOString().split('T')[0])
       setFormOpen(false)
