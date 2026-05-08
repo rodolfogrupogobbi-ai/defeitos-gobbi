@@ -3,11 +3,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { STAGE_LABELS } from '@/types'
+import { STAGE_LABELS, REIMBURSEMENT_LABELS } from '@/types'
 import { HistoryList } from '@/components/defect/HistoryList'
 import { WhatsAppButton } from '@/components/defect/WhatsAppButton'
 import { StageAdvancer } from '@/components/defect/StageAdvancer'
 import { PhotoUpload } from '@/components/defect/PhotoUpload'
+import { BrandCommLog } from '@/components/defect/BrandCommLog'
 import { getAlertLevel } from '@/lib/date-utils'
 import { Badge } from '@/components/ui/Badge'
 import { PhoneReveal } from '@/components/ui/PhoneReveal'
@@ -31,6 +32,7 @@ export default async function DefectDetailPage({
     { data: profile },
     { data: history },
     { data: photos },
+    { data: brandComms },
   ] = await Promise.all([
     supabase
       .from('defects')
@@ -55,6 +57,11 @@ export default async function DefectDetailPage({
       .select('*')
       .eq('defect_id', id)
       .order('created_at', { ascending: true }),
+    supabase
+      .from('defect_brand_comms')
+      .select('*, created_by_profile:profiles!created_by(*)')
+      .eq('defect_id', id)
+      .order('comm_date', { ascending: true }),
   ])
 
   if (!defect || !profile) notFound()
@@ -66,6 +73,11 @@ export default async function DefectDetailPage({
     ? await supabase.from('brand_contacts').select('*').eq('brand_id', defectData.brand_id).order('name')
     : { data: [] }
   const alert = getAlertLevel(defectData.current_stage, defectData.received_at)
+
+  const showBrandComms =
+    defectData.current_stage === 'aguardando_retorno_marca' ||
+    defectData.current_stage === 'emissao_nf' ||
+    (brandComms && brandComms.length > 0)
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -186,6 +198,11 @@ export default async function DefectDetailPage({
                       em {format(new Date(defectData.brand_reimbursed_at), 'dd/MM/yyyy')}
                     </span>
                   )}
+                  {defectData.reimbursement_method && (
+                    <span className="text-gray-500 ml-1">
+                      · {REIMBURSEMENT_LABELS[defectData.reimbursement_method] ?? defectData.reimbursement_method}
+                    </span>
+                  )}
                 </p>
               )}
             </div>
@@ -231,6 +248,16 @@ export default async function DefectDetailPage({
           />
         </div>
       </div>
+
+      {/* Brand communication log */}
+      {showBrandComms && (
+        <BrandCommLog
+          defectId={defectData.id}
+          userId={user.id}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          initialComms={(brandComms ?? []) as any}
+        />
+      )}
 
       {/* Stage advancement */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">

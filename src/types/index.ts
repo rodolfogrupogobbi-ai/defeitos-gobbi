@@ -5,6 +5,8 @@ export type Stage =
   | 'dados_fiscais'
   | 'in_progress'
   | 'photos_attached'
+  | 'aguardando_retorno_marca'
+  | 'emissao_nf'
   | 'awaiting_reimbursement'
   | 'paid_to_client'
   | 'reimbursed_to_store'
@@ -13,14 +15,24 @@ export type Stage =
   | 'nao_enviado'
 
 export type CommunicationChannel = 'system' | 'email' | 'whatsapp'
-export type ReimbursementMethod = 'bank_transfer' | 'invoice'
+export type ReimbursementMethod = string
 export type WhatsAppTemplateStage = 'received' | 'awaiting_reimbursement' | 'paid_to_client'
+
+export const REIMBURSEMENT_LABELS: Record<string, string> = {
+  invoice: 'Nota Fiscal',
+  bank_transfer: 'Conta Corrente',
+  troca_peca: 'Troca da Peça',
+  enviado_outra_peca: 'Enviado Outra Peça',
+  desconto_boleto: 'Desconto em Boleto',
+}
 
 export const STAGE_LABELS: Record<Stage, string> = {
   received: 'Recebido',
   dados_fiscais: 'Dados Fiscais',
   in_progress: 'Processo Iniciado',
   photos_attached: 'Fotos Anexadas',
+  aguardando_retorno_marca: 'Aguardando Retorno da Marca',
+  emissao_nf: 'Emissão da Nota Fiscal',
   awaiting_reimbursement: 'Aguardando Indenização',
   paid_to_client: 'Pago ao Cliente',
   reimbursed_to_store: 'Indenizado à Loja',
@@ -31,6 +43,7 @@ export const STAGE_LABELS: Record<Stage, string> = {
 
 export const ACTIVE_STAGES: Stage[] = [
   'received', 'dados_fiscais', 'in_progress', 'photos_attached',
+  'aguardando_retorno_marca', 'emissao_nf',
   'awaiting_reimbursement', 'paid_to_client', 'reimbursed_to_store',
 ]
 
@@ -145,4 +158,14 @@ export interface DefectPhoto {
   defect_id: string
   url: string
   created_at: string
+}
+
+export interface DefectBrandComm {
+  id: string
+  defect_id: string
+  comm_date: string
+  notes: string
+  created_by: string
+  created_at: string
+  created_by_profile?: Profile
 }

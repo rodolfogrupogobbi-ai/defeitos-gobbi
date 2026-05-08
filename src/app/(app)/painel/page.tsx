@@ -64,7 +64,11 @@ export default async function PainelPage({
     (s: number, d: any) => s + (d.brand_reimbursement_amount ?? 0),
     0
   )
-  const openBalance = totalClientPaid - totalBrandReceived
+  // Brand owes us piece_cost (factory cost), not retail price
+  const totalOwedByBrands = all
+    .filter((d: any) => d.client_amount_paid != null)
+    .reduce((s: number, d: any) => s + (d.piece_cost ?? 0), 0)
+  const openBalance = totalOwedByBrands - totalBrandReceived
 
   // Top brand by defect count
   const byBrand: Record<string, number> = {}
@@ -86,6 +90,8 @@ export default async function PainelPage({
     { value: 'dados_fiscais', label: 'Dados Fiscais' },
     { value: 'in_progress', label: 'Processo Iniciado' },
     { value: 'photos_attached', label: 'Fotos Anexadas' },
+    { value: 'aguardando_retorno_marca', label: 'Aguardando Retorno da Marca' },
+    { value: 'emissao_nf', label: 'Emissão da Nota Fiscal' },
     { value: 'awaiting_reimbursement', label: 'Aguardando Indenização' },
     { value: 'paid_to_client', label: 'Pago ao Cliente' },
     { value: 'reimbursed_to_store', label: 'Indenizado à Loja' },
@@ -222,7 +228,7 @@ export default async function PainelPage({
           label="Em andamento"
           value={
             all.filter((d: any) =>
-              ['received', 'dados_fiscais', 'in_progress', 'photos_attached', 'awaiting_reimbursement'].includes(
+              ['received', 'dados_fiscais', 'in_progress', 'photos_attached', 'aguardando_retorno_marca', 'emissao_nf', 'awaiting_reimbursement'].includes(
                 d.current_stage
               )
             ).length

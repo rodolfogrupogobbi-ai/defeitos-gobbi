@@ -5,16 +5,29 @@ import { createClient } from '@/lib/supabase/client'
 import { Modal } from '@/components/ui/Modal'
 import { canAdvanceToStage5 } from '@/lib/permissions'
 import { CLOSED_STAGES, STAGE_LABELS } from '@/types'
-import type { Defect, Stage, Role, CommunicationChannel, ReimbursementMethod } from '@/types'
+import type { Defect, Stage, Role, CommunicationChannel } from '@/types'
 
 const NEXT_STAGE: Partial<Record<Stage, Stage>> = {
   received: 'dados_fiscais',
   dados_fiscais: 'in_progress',
   in_progress: 'photos_attached',
-  photos_attached: 'awaiting_reimbursement',
+  photos_attached: 'aguardando_retorno_marca',
+  aguardando_retorno_marca: 'emissao_nf',
+  emissao_nf: 'awaiting_reimbursement',
   awaiting_reimbursement: 'paid_to_client',
   paid_to_client: 'reimbursed_to_store',
 }
+
+const REIMBURSEMENT_OPTIONS = [
+  { value: 'invoice', label: 'Nota Fiscal' },
+  { value: 'bank_transfer', label: 'Conta Corrente' },
+  { value: 'troca_peca', label: 'Troca da Peça' },
+  { value: 'enviado_outra_peca', label: 'Enviado Outra Peça' },
+  { value: 'desconto_boleto', label: 'Desconto em Boleto' },
+  { value: 'outro', label: 'Outro (especificar)' },
+]
+
+const CLOSEABLE_STAGES: Stage[] = ['awaiting_reimbursement', 'aguardando_retorno_marca', 'emissao_nf']
 
 interface Props {
   defect: Defect
@@ -29,14 +42,14 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  // Fiscal fields (dados_fiscais stage)
-  const [fiscalIcms, setFiscalIcms] = useState('')
-  const [fiscalAliquota, setFiscalAliquota] = useState('')
-  const [fiscalFrete, setFiscalFrete] = useState('')
-  const [fiscalDesconto, setFiscalDesconto] = useState('')
-  const [fiscalNf, setFiscalNf] = useState('')
-  const [fiscalEndereco, setFiscalEndereco] = useState('')
-  const [fiscalRazaoSocial, setFiscalRazaoSocial] = useState('')
+  // Fiscal fields — pre-filled from defect for emissao_nf review
+  const [fiscalIcms, setFiscalIcms] = useState(defect.fiscal_icms != null ? String(defect.fiscal_icms) : '')
+  const [fiscalAliquota, setFiscalAliquota] = useState(defect.fiscal_aliquota != null ? String(defect.fiscal_aliquota) : '')
+  const [fiscalFrete, setFiscalFrete] = useState(defect.fiscal_frete != null ? String(defect.fiscal_frete) : '')
+  const [fiscalDesconto, setFiscalDesconto] = useState(defect.fiscal_desconto != null ? String(defect.fiscal_desconto) : '')
+  const [fiscalNf, setFiscalNf] = useState(defect.fiscal_nf ?? '')
+  const [fiscalEndereco, setFiscalEndereco] = useState(defect.fiscal_endereco ?? '')
+  const [fiscalRazaoSocial, setFiscalRazaoSocial] = useState(defect.fiscal_razao_social ?? '')
 
   // in_progress fields
   const [channel, setChannel] = useState<CommunicationChannel>('email')
@@ -49,7 +62,8 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   // reimbursed_to_store fields
   const [brandAmount, setBrandAmount] = useState('')
   const [brandAt, setBrandAt] = useState('')
-  const [reimbMethod, setReimbMethod] = useState<ReimbursementMethod>('invoice')
+  const [reimbMethod, setReimbMethod] = useState('invoice')
+  const [reimbMethodCustom, setReimbMethodCustom] = useState('')
 
   // close fields
   const [closeStage, setCloseStage] = useState<Stage>('improcedente')
@@ -76,9 +90,14 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
     )
   }
 
+  const modalTitle = defect.current_stage === 'emissao_nf'
+    ? 'Confirmar Nota Fiscal para a Marca'
+    : `Avançar para: ${nextStage ? STAGE_LABELS[nextStage] : ''}`
+
   async function advance() {
     if (!nextStage) return
     setSaving(true)
+    setSaveError('')
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updates: Record<string, any> = { current_stage: nextStage }
@@ -92,6 +111,15 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       if (fiscalEndereco) updates.fiscal_endereco = fiscalEndereco
       if (fiscalRazaoSocial) updates.fiscal_razao_social = fiscalRazaoSocial
     }
+    if (defect.current_stage === 'emissao_nf') {
+      updates.fiscal_icms = fiscalIcms ? parseFloat(fiscalIcms) : null
+      updates.fiscal_aliquota = fiscalAliquota ? parseFloat(fiscalAliquota) : null
+      updates.fiscal_frete = fiscalFrete ? parseFloat(fiscalFrete) : null
+      updates.fiscal_desconto = fiscalDesconto ? parseFloat(fiscalDesconto) : null
+      updates.fiscal_nf = fiscalNf || null
+      updates.fiscal_endereco = fiscalEndereco || null
+      updates.fiscal_razao_social = fiscalRazaoSocial || null
+    }
     if (nextStage === 'in_progress') {
       updates.communication_channel = channel
       if (protocol) updates.protocol_number = protocol
@@ -103,10 +131,9 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
     if (nextStage === 'reimbursed_to_store') {
       updates.brand_reimbursement_amount = parseFloat(brandAmount)
       updates.brand_reimbursed_at = brandAt
-      updates.reimbursement_method = reimbMethod
+      updates.reimbursement_method = reimbMethod === 'outro' ? reimbMethodCustom : reimbMethod
     }
 
-    setSaveError('')
     const { error: updateError } = await supabase.from('defects').update(updates).eq('id', defect.id)
     if (updateError) {
       setSaveError(`Erro ao avançar: ${updateError.message}`)
@@ -155,7 +182,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
             Avançar → {STAGE_LABELS[nextStage]}
           </button>
         )}
-        {defect.current_stage === 'awaiting_reimbursement' && canAdvanceToStage5(userRole) && (
+        {CLOSEABLE_STAGES.includes(defect.current_stage) && canAdvanceToStage5(userRole) && (
           <button
             onClick={() => setCloseOpen(true)}
             className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700"
@@ -166,12 +193,10 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       </div>
 
       {/* Advance modal */}
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title={`Avançar para: ${nextStage ? STAGE_LABELS[nextStage] : ''}`}
-      >
+      <Modal open={open} onClose={() => setOpen(false)} title={modalTitle}>
         <div className="flex flex-col gap-4">
+
+          {/* dados_fiscais — enter fiscal data */}
           {nextStage === 'dados_fiscais' && (
             <>
               <p className="text-sm text-gray-500">Todos os campos são opcionais. Preencha os dados disponíveis para emissão da NF.</p>
@@ -215,6 +240,51 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
             </>
           )}
 
+          {/* emissao_nf — review/edit fiscal data before sending to brand */}
+          {defect.current_stage === 'emissao_nf' && (
+            <>
+              <p className="text-sm text-gray-500">Revise os dados fiscais antes de avançar. Campos em branco serão limpos.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">ICMS (%)</label>
+                  <input type="number" step="0.01" value={fiscalIcms} onChange={e => setFiscalIcms(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Ex: 12" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Alíquota (%)</label>
+                  <input type="number" step="0.01" value={fiscalAliquota} onChange={e => setFiscalAliquota(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Ex: 7" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Frete (R$)</label>
+                  <input type="number" step="0.01" value={fiscalFrete} onChange={e => setFiscalFrete(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="0,00" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Desconto (R$)</label>
+                  <input type="number" step="0.01" value={fiscalDesconto} onChange={e => setFiscalDesconto(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="0,00" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Número da Nota Fiscal</label>
+                <input value={fiscalNf} onChange={e => setFiscalNf(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Ex: 000123" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Razão Social da Empresa</label>
+                <input value={fiscalRazaoSocial} onChange={e => setFiscalRazaoSocial(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Endereço de Envio</label>
+                <input value={fiscalEndereco} onChange={e => setFiscalEndereco(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+            </>
+          )}
+
+          {/* in_progress */}
           {nextStage === 'in_progress' && (
             <>
               <div className="flex flex-col gap-1">
@@ -235,6 +305,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
             </>
           )}
 
+          {/* paid_to_client */}
           {nextStage === 'paid_to_client' && (
             <>
               <div className="flex flex-col gap-1">
@@ -250,6 +321,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
             </>
           )}
 
+          {/* reimbursed_to_store */}
           {nextStage === 'reimbursed_to_store' && (
             <>
               <div className="flex flex-col gap-1">
@@ -263,13 +335,22 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Forma</label>
-                <select value={reimbMethod} onChange={e => setReimbMethod(e.target.value as ReimbursementMethod)}
+                <label className="text-sm font-medium text-gray-700">Forma de reembolso</label>
+                <select value={reimbMethod} onChange={e => setReimbMethod(e.target.value)}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
-                  <option value="invoice">Nota Fiscal</option>
-                  <option value="bank_transfer">Conta Corrente</option>
+                  {REIMBURSEMENT_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
+              {reimbMethod === 'outro' && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">Descreva a forma</label>
+                  <input value={reimbMethodCustom} onChange={e => setReimbMethodCustom(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Ex: Crédito em nota futura" />
+                </div>
+              )}
             </>
           )}
 
