@@ -129,19 +129,22 @@ export function DefectForm({ companies, brands, defectTypes, profiles, currentUs
     const protocol_number = await generateProtocol(data.received_at)
     const receivedBy = isOutro ? currentUserId : data.received_by
     const receivedByName = isOutro ? (data.received_by_name?.trim() ?? null) : null
+    // Exclude received_by and received_by_name from spread; handle them explicitly
+    const { received_by: _rb, received_by_name: _rbn, ...baseData } = data
+    const insertPayload: Record<string, unknown> = {
+      ...baseData,
+      received_by: receivedBy,
+      client_code: data.client_code || null,
+      nf_factory: data.nf_factory || null,
+      notes: data.notes || null,
+      piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
+      current_stage: 'received',
+      protocol_number,
+    }
+    if (receivedByName !== null) insertPayload.received_by_name = receivedByName
     const { data: defect, error: err } = await supabase
       .from('defects')
-      .insert({
-        ...data,
-        received_by: receivedBy,
-        received_by_name: receivedByName,
-        client_code: data.client_code || null,
-        nf_factory: data.nf_factory || null,
-        notes: data.notes || null,
-        piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
-        current_stage: 'received',
-        protocol_number,
-      })
+      .insert(insertPayload)
       .select()
       .single()
     if (err) {
