@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { trustedDeviceCookieValue } from '@/lib/cookie-hmac'
 
 export async function POST(request: NextRequest) {
   const { code } = await request.json()
@@ -34,8 +35,9 @@ export async function POST(request: NextRequest) {
   await admin.from('device_verifications').delete().eq('id', data.id)
 
   const cookieName = `trusted_device_${user.id}`
+  const cookieValue = await trustedDeviceCookieValue(user.id)
   const response = NextResponse.json({ ok: true })
-  response.cookies.set(cookieName, '1', {
+  response.cookies.set(cookieName, cookieValue, {
     maxAge: 30 * 24 * 60 * 60,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { trustedDeviceCookieValue } from '@/lib/cookie-hmac'
 
 const PUBLIC_PATHS = ['/login', '/verificar-dispositivo']
 
@@ -42,14 +43,16 @@ export async function proxy(request: NextRequest) {
   if (user) {
     const cookieName = `trusted_device_${user.id}`
     const trusted = request.cookies.get(cookieName)
+    const expectedValue = await trustedDeviceCookieValue(user.id)
+    const isVerified = trusted?.value === expectedValue
 
-    if (!trusted && !isPublicPath && !isApiPath) {
+    if (!isVerified && !isPublicPath && !isApiPath) {
       return NextResponse.redirect(new URL('/verificar-dispositivo', request.url))
     }
 
     if (pathname === '/login') {
       return NextResponse.redirect(
-        new URL(trusted ? '/kanban' : '/verificar-dispositivo', request.url)
+        new URL(isVerified ? '/kanban' : '/verificar-dispositivo', request.url)
       )
     }
   }
