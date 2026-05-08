@@ -11,14 +11,14 @@ export function KanbanColumn({ stage, defects }: Props) {
   return (
     <div className="flex flex-col min-w-56 w-64 flex-shrink-0">
       <div
-        className="flex items-center justify-between px-3 py-2 rounded-t-lg mb-0"
+        className="flex items-start justify-between px-3 py-2 rounded-t-lg mb-0"
         style={{ background: 'var(--navy)', borderRadius: '8px 8px 0 0' }}
       >
-        <h3 className="text-xs font-semibold text-white uppercase tracking-wide truncate">
+        <h3 className="text-xs font-semibold text-white uppercase tracking-wide leading-tight">
           {STAGE_LABELS[stage]}
         </h3>
         <span
-          className="text-xs font-bold rounded-full px-2 py-0.5 shrink-0 ml-2"
+          className="text-xs font-bold rounded-full px-2 py-0.5 shrink-0 ml-2 mt-0.5"
           style={{ background: 'var(--orange)', color: '#fff' }}
         >
           {defects.length}
