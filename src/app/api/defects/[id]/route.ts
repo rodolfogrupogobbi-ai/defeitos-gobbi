@@ -15,6 +15,9 @@ export async function PATCH(
     'company_id', 'brand_id', 'product_name', 'reference', 'color', 'size',
     'nf_number', 'nf_factory', 'cod_use', 'piece_cost', 'client_amount_paid',
     'defect_type_id', 'client_name', 'client_phone', 'client_code', 'received_at',
+    'notes', 'client_resolution_type',
+    'fiscal_icms', 'fiscal_aliquota', 'fiscal_frete', 'fiscal_desconto',
+    'fiscal_nf', 'fiscal_endereco', 'fiscal_razao_social',
   ]
   const update: Record<string, unknown> = {}
   for (const key of allowed) {

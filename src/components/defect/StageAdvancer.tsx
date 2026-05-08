@@ -7,6 +7,17 @@ import { canAdvanceToStage5 } from '@/lib/permissions'
 import { CLOSED_STAGES, STAGE_LABELS } from '@/types'
 import type { Defect, Stage, Role, CommunicationChannel } from '@/types'
 
+const ADVANCE_ACTION_LABELS: Partial<Record<Stage, string>> = {
+  received:                  'Registrar Dados Fiscais',
+  dados_fiscais:             'Iniciar Processo com a Marca',
+  in_progress:               'Confirmar Fotos Anexadas',
+  photos_attached:           'Encaminhar à Marca',
+  aguardando_retorno_marca:  'Emitir Nota Fiscal',
+  emissao_nf:                'Confirmar NF — Aguardar Pagamento',
+  awaiting_reimbursement:    'Registrar Resolução com o Cliente',
+  paid_to_client:            'Registrar Recebimento da Marca',
+}
+
 const NEXT_STAGE: Partial<Record<Stage, Stage>> = {
   received: 'dados_fiscais',
   dados_fiscais: 'in_progress',
@@ -56,6 +67,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
   const [protocol, setProtocol] = useState(defect.protocol_number ?? '')
 
   // paid_to_client fields
+  const [clientResolutionType, setClientResolutionType] = useState('pagamento')
   const [clientPaid, setClientPaid] = useState('')
   const [clientPaidAt, setClientPaidAt] = useState('')
 
@@ -90,9 +102,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
     )
   }
 
-  const modalTitle = defect.current_stage === 'emissao_nf'
-    ? 'Confirmar Nota Fiscal para a Marca'
-    : `Avançar para: ${nextStage ? STAGE_LABELS[nextStage] : ''}`
+  const actionLabel = ADVANCE_ACTION_LABELS[defect.current_stage] ?? `Avançar → ${nextStage ? STAGE_LABELS[nextStage] : ''}`
 
   async function advance() {
     if (!nextStage) return
@@ -125,8 +135,34 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       if (protocol) updates.protocol_number = protocol
     }
     if (nextStage === 'paid_to_client') {
-      updates.client_amount_paid = parseFloat(clientPaid)
-      updates.client_paid_at = clientPaidAt
+      if (clientResolutionType === 'improcedente') {
+        const { error: closeError } = await supabase
+          .from('defects')
+          .update({ current_stage: 'improcedente', client_resolution_type: 'improcedente' })
+          .eq('id', defect.id)
+        if (closeError) {
+          setSaveError(`Erro: ${closeError.message}`)
+          setSaving(false)
+          return
+        }
+        await supabase.from('defect_history').insert({
+          defect_id: defect.id,
+          from_stage: defect.current_stage,
+          to_stage: 'improcedente',
+          changed_by: userId,
+        })
+        setSaving(false)
+        setOpen(false)
+        router.refresh()
+        return
+      }
+      updates.client_resolution_type = clientResolutionType
+      if (clientResolutionType === 'pagamento') {
+        if (clientPaid) updates.client_amount_paid = parseFloat(clientPaid)
+        if (clientPaidAt) updates.client_paid_at = clientPaidAt
+      } else {
+        if (clientPaidAt) updates.client_paid_at = clientPaidAt
+      }
     }
     if (nextStage === 'reimbursed_to_store') {
       updates.brand_reimbursement_amount = parseFloat(brandAmount)
@@ -179,7 +215,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
             onClick={() => setOpen(true)}
             className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
           >
-            Avançar → {STAGE_LABELS[nextStage]}
+            {actionLabel}
           </button>
         )}
         {CLOSEABLE_STAGES.includes(defect.current_stage) && canAdvanceToStage5(userRole) && (
@@ -193,7 +229,7 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
       </div>
 
       {/* Advance modal */}
-      <Modal open={open} onClose={() => setOpen(false)} title={modalTitle}>
+      <Modal open={open} onClose={() => setOpen(false)} title={actionLabel}>
         <div className="flex flex-col gap-4">
 
           {/* dados_fiscais — enter fiscal data */}
@@ -309,15 +345,41 @@ export function StageAdvancer({ defect, userId, userRole }: Props) {
           {nextStage === 'paid_to_client' && (
             <>
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Valor pago ao cliente (R$)</label>
-                <input type="number" step="0.01" value={clientPaid} onChange={e => setClientPaid(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
+                <label className="text-sm font-medium text-gray-700">Como foi resolvido com o cliente?</label>
+                <select value={clientResolutionType} onChange={e => setClientResolutionType(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
+                  <option value="pagamento">Pagamento (dinheiro / PIX)</option>
+                  <option value="troca">Troca da Peça</option>
+                  <option value="conserto">Conserto</option>
+                  <option value="improcedente">Improcedente</option>
+                </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">Data do pagamento</label>
-                <input type="date" value={clientPaidAt} onChange={e => setClientPaidAt(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm" required />
-              </div>
+              {clientResolutionType === 'pagamento' && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Valor pago ao cliente (R$)</label>
+                    <input type="number" step="0.01" value={clientPaid} onChange={e => setClientPaid(e.target.value)}
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Data do pagamento</label>
+                    <input type="date" value={clientPaidAt} onChange={e => setClientPaidAt(e.target.value)}
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  </div>
+                </>
+              )}
+              {(clientResolutionType === 'troca' || clientResolutionType === 'conserto') && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">Data da resolução</label>
+                  <input type="date" value={clientPaidAt} onChange={e => setClientPaidAt(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                </div>
+              )}
+              {clientResolutionType === 'improcedente' && (
+                <p className="text-sm text-amber-700 bg-amber-50 rounded-md px-3 py-2">
+                  O defeito será encerrado como <strong>Improcedente</strong>. Esta ação não pode ser desfeita.
+                </p>
+              )}
             </>
           )}
 

@@ -18,6 +18,13 @@ export type CommunicationChannel = 'system' | 'email' | 'whatsapp'
 export type ReimbursementMethod = string
 export type WhatsAppTemplateStage = 'received' | 'awaiting_reimbursement' | 'paid_to_client'
 
+export const CLIENT_RESOLUTION_LABELS: Record<string, string> = {
+  pagamento: 'Pagamento (dinheiro/PIX)',
+  troca: 'Troca da Peça',
+  conserto: 'Conserto',
+  improcedente: 'Improcedente',
+}
+
 export const REIMBURSEMENT_LABELS: Record<string, string> = {
   invoice: 'Nota Fiscal',
   bank_transfer: 'Conta Corrente',
@@ -99,6 +106,7 @@ export interface Defect {
   photo_url: string | null
   piece_cost: number | null
   nf_factory: string | null
+  client_resolution_type: string | null
   client_amount_paid: number | null
   client_paid_at: string | null
   brand_reimbursement_amount: number | null

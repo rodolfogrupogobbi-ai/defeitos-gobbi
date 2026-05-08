@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { STAGE_LABELS, REIMBURSEMENT_LABELS } from '@/types'
+import { STAGE_LABELS, REIMBURSEMENT_LABELS, CLIENT_RESOLUTION_LABELS } from '@/types'
 import { HistoryList } from '@/components/defect/HistoryList'
 import { WhatsAppButton } from '@/components/defect/WhatsAppButton'
 import { StageAdvancer } from '@/components/defect/StageAdvancer'
 import { PhotoUpload } from '@/components/defect/PhotoUpload'
 import { BrandCommLog } from '@/components/defect/BrandCommLog'
+import { FiscalDataEditor } from '@/components/defect/FiscalDataEditor'
 import { getAlertLevel } from '@/lib/date-utils'
 import { Badge } from '@/components/ui/Badge'
 import { PhoneReveal } from '@/components/ui/PhoneReveal'
@@ -178,10 +179,17 @@ export default async function DefectDetailPage({
                   <strong>R$ {Number(defectData.piece_cost).toFixed(2)}</strong>
                 </p>
               )}
-              {defectData.client_amount_paid !== null && (
+              {(defectData.client_amount_paid !== null || defectData.client_resolution_type) && (
                 <p className="text-sm">
-                  Pago ao cliente:{' '}
-                  <strong>R$ {Number(defectData.client_amount_paid).toFixed(2)}</strong>
+                  Resolução com cliente:{' '}
+                  <strong>
+                    {defectData.client_resolution_type
+                      ? CLIENT_RESOLUTION_LABELS[defectData.client_resolution_type] ?? defectData.client_resolution_type
+                      : '—'}
+                  </strong>
+                  {defectData.client_amount_paid !== null && (
+                    <span className="ml-1">· R$ {Number(defectData.client_amount_paid).toFixed(2)}</span>
+                  )}
                   {defectData.client_paid_at && (
                     <span className="text-gray-500 ml-1">
                       em {format(new Date(defectData.client_paid_at), 'dd/MM/yyyy')}
@@ -248,6 +256,11 @@ export default async function DefectDetailPage({
           />
         </div>
       </div>
+
+      {/* Fiscal data editor — visible at emissao_nf stage */}
+      {defectData.current_stage === 'emissao_nf' && (
+        <FiscalDataEditor defect={defectData} />
+      )}
 
       {/* Brand communication log */}
       {showBrandComms && (
