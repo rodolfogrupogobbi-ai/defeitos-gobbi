@@ -11,12 +11,12 @@ export default async function NovoDefeitoPage() {
     { data: companies },
     { data: brands },
     { data: defectTypes },
-    { data: profile },
+    { data: profiles },
   ] = await Promise.all([
     supabase.from('companies').select('*').eq('active', true).order('name'),
     supabase.from('brands').select('*').eq('active', true).order('name'),
     supabase.from('defect_types').select('*').eq('active', true).order('name'),
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('profiles').select('*').order('name'),
   ])
 
   return (
@@ -26,8 +26,8 @@ export default async function NovoDefeitoPage() {
         companies={companies ?? []}
         brands={brands ?? []}
         defectTypes={defectTypes ?? []}
-        receivedBy={user.id}
-        receivedByName={profile?.name ?? ''}
+        profiles={profiles ?? []}
+        currentUserId={user.id}
       />
     </div>
   )

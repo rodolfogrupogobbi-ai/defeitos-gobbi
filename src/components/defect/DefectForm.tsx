@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
-import type { Company, Brand, DefectType } from '@/types'
+import type { Company, Brand, DefectType, Profile } from '@/types'
 
 const schema = z.object({
   company_id: z.string().min(1, 'Selecione a empresa'),
@@ -27,6 +27,7 @@ const schema = z.object({
   client_code: z.string().optional(),
   notes: z.string().optional(),
   received_at: z.string().min(1, 'Informe a data'),
+  received_by: z.string().min(1, 'Selecione quem recebeu'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -34,11 +35,11 @@ interface Props {
   companies: Company[]
   brands: Brand[]
   defectTypes: DefectType[]
-  receivedBy: string
-  receivedByName: string
+  profiles: Profile[]
+  currentUserId: string
 }
 
-export function DefectForm({ companies, brands, defectTypes, receivedBy, receivedByName }: Props) {
+export function DefectForm({ companies, brands, defectTypes, profiles, currentUserId }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -54,7 +55,10 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
     setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { received_at: new Date().toISOString().split('T')[0] },
+    defaultValues: {
+      received_at: new Date().toISOString().split('T')[0],
+      received_by: currentUserId,
+    },
   })
 
   async function addBrand() {
@@ -77,7 +81,7 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
     const supabase = createClient()
     const { data } = await supabase
       .from('defect_types')
-      .insert({ name: newType.trim(), created_by: receivedBy })
+      .insert({ name: newType.trim(), created_by: currentUserId })
       .select()
       .single()
     if (data) {
@@ -119,7 +123,7 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
         nf_factory: data.nf_factory || null,
         notes: data.notes || null,
         piece_cost: data.piece_cost ? parseFloat(data.piece_cost) : null,
-        received_by: receivedBy,
+        received_by: data.received_by,
         current_stage: 'received',
         protocol_number,
       })
@@ -134,7 +138,7 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
       defect_id: defect.id,
       from_stage: null,
       to_stage: 'received',
-      changed_by: receivedBy,
+      changed_by: currentUserId,
     })
     router.push(`/defeito/${defect.id}`)
   }
@@ -269,12 +273,20 @@ export function DefectForm({ companies, brands, defectTypes, receivedBy, receive
           error={errors.received_at?.message}
           {...register('received_at')}
         />
-        <Input
-          label="Recebido por"
-          value={receivedByName}
-          readOnly
-          className="bg-gray-50"
-        />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">Recebido por *</label>
+          <select
+            {...register('received_by')}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
+          >
+            {profiles.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          {errors.received_by && (
+            <p className="text-xs text-red-600">{errors.received_by.message}</p>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
