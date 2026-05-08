@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { subYears, format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { canAccessDashboard } from '@/lib/permissions'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { DefectsTable } from '@/components/dashboard/DefectsTable'
@@ -13,6 +14,7 @@ interface SearchParams {
   brand?: string
   stage?: string
   operator?: string
+  client?: string
 }
 
 export default async function PainelPage({
@@ -54,6 +56,7 @@ export default async function PainelPage({
   if (sp.brand) query = query.eq('brand_id', sp.brand)
   if (sp.stage) query = query.eq('current_stage', sp.stage)
   if (sp.operator) query = query.eq('received_by', sp.operator)
+  if (sp.client) query = query.ilike('client_name', `%${sp.client}%`)
 
   const { data: defects } = await query
   const all = (defects ?? []) as any[]
@@ -77,6 +80,33 @@ export default async function PainelPage({
     byBrand[n] = (byBrand[n] ?? 0) + 1
   })
   const topBrand = Object.entries(byBrand).sort((a, b) => b[1] - a[1])[0]
+
+  // Per-brand open balance breakdown (only meaningful when viewing all brands)
+  interface BrandBalanceEntry {
+    name: string
+    open: number
+    oldestPendingDate: string | null
+  }
+  const brandBalanceMap: Record<string, { name: string; owed: number; received: number; oldestPendingDate: string | null }> = {}
+  all.forEach((d: any) => {
+    const id = d.brand_id ?? '__unknown__'
+    const name = d.brand?.name ?? 'Desconhecida'
+    if (!brandBalanceMap[id]) brandBalanceMap[id] = { name, owed: 0, received: 0, oldestPendingDate: null }
+    const entry = brandBalanceMap[id]
+    if (d.client_amount_paid != null) {
+      entry.owed += d.piece_cost ?? 0
+      if (d.brand_reimbursement_amount == null) {
+        if (!entry.oldestPendingDate || d.received_at < entry.oldestPendingDate) {
+          entry.oldestPendingDate = d.received_at
+        }
+      }
+    }
+    entry.received += d.brand_reimbursement_amount ?? 0
+  })
+  const brandBreakdown: BrandBalanceEntry[] = Object.values(brandBalanceMap)
+    .map(b => ({ name: b.name, open: b.owed - b.received, oldestPendingDate: b.oldestPendingDate }))
+    .filter(b => b.open > 0)
+    .sort((a, b) => b.open - a.open)
 
   // Fetch filter options
   const [{ data: companies }, { data: brands }, { data: profiles }] = await Promise.all([
@@ -184,6 +214,16 @@ export default async function PainelPage({
             ))}
           </select>
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">Cliente</label>
+          <input
+            type="text"
+            name="client"
+            defaultValue={sp.client ?? ''}
+            placeholder="Nome do cliente..."
+            className="border border-gray-300 rounded px-2 py-1.5 text-sm"
+          />
+        </div>
         <button
           type="submit"
           className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
@@ -241,6 +281,37 @@ export default async function PainelPage({
           }
         />
       </div>
+
+      {/* Per-brand open balance breakdown */}
+      {!sp.brand && brandBreakdown.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 mb-3">Saldo em Aberto por Marca</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                <th className="pb-2 font-medium">Marca</th>
+                <th className="pb-2 font-medium text-right">Valor em aberto</th>
+                <th className="pb-2 font-medium text-right">Defeito mais antigo pendente</th>
+              </tr>
+            </thead>
+            <tbody>
+              {brandBreakdown.map(b => (
+                <tr key={b.name} className="border-b border-gray-50 last:border-0">
+                  <td className="py-2 font-medium text-gray-900">{b.name}</td>
+                  <td className="py-2 text-right font-semibold text-red-600">
+                    R$ {b.open.toFixed(2)}
+                  </td>
+                  <td className="py-2 text-right text-gray-500">
+                    {b.oldestPendingDate
+                      ? format(new Date(b.oldestPendingDate + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
