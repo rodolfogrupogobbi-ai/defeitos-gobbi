@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
+import { trustedDeviceCookieValue } from '@/lib/cookie-hmac'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const RATE_LIMIT_MS = 90 * 1000 // 90 seconds between sends
@@ -15,7 +16,8 @@ export async function POST(request: NextRequest) {
 
   const cookieName = `trusted_device_${user.id}`
   const trusted = request.cookies.get(cookieName)
-  if (trusted) {
+  const expectedValue = await trustedDeviceCookieValue(user.id)
+  if (trusted?.value === expectedValue) {
     return NextResponse.json({ skip: true })
   }
 
