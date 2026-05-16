@@ -54,7 +54,24 @@ export const ACTIVE_STAGES: Stage[] = [
   'awaiting_reimbursement', 'paid_to_client', 'reimbursed_to_store',
 ]
 
+// Stages shown on the Visão Geral kanban board (active + improcedente for tracking)
+export const KANBAN_STAGES: Stage[] = [...ACTIVE_STAGES, 'improcedente']
+
 export const CLOSED_STAGES: Stage[] = ['improcedente', 'doacao', 'nao_enviado']
+
+export const LOJA_ORIGEM_OPTIONS = [
+  { value: 'MPB_FEMININO', label: 'MPB Feminino' },
+  { value: 'MPB_MASCULINO', label: 'MPB Masculino' },
+  { value: 'LA_LUNA', label: 'La Luna' },
+  { value: 'OUTLET', label: 'Outlet' },
+] as const
+
+export const LOJA_ORIGEM_LABELS: Record<string, string> = {
+  MPB_FEMININO: 'MPB Feminino',
+  MPB_MASCULINO: 'MPB Masculino',
+  LA_LUNA: 'La Luna',
+  OUTLET: 'Outlet',
+}
 
 export interface Profile {
   id: string
@@ -126,6 +143,7 @@ export interface Defect {
   fiscal_nf: string | null
   fiscal_endereco: string | null
   fiscal_razao_social: string | null
+  loja_origem: string | null
   deleted_at: string | null
   deleted_by: string | null
   created_at: string

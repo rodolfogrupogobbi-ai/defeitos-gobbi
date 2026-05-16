@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { ACTIVE_STAGES } from '@/types'
+import { KANBAN_STAGES } from '@/types'
 import { KanbanColumn } from './KanbanColumn'
 import type { Defect } from '@/types'
 
@@ -37,7 +37,7 @@ export function KanbanBoard({ defects }: { defects: Defect[] }) {
         </Link>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {ACTIVE_STAGES.map(stage => (
+        {KANBAN_STAGES.map(stage => (
           <KanbanColumn
             key={stage}
             stage={stage}

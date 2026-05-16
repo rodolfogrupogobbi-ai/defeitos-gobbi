@@ -7,6 +7,13 @@ import { trustedDeviceCookieValue } from '@/lib/cookie-hmac'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const RATE_LIMIT_MS = 90 * 1000 // 90 seconds between sends
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@')
+  if (!domain) return email
+  if (local.length <= 2) return `${local[0]}*@${domain}`
+  return `${local[0]}${'*'.repeat(local.length - 2)}${local[local.length - 1]}@${domain}`
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,6 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient()
+  const maskedEmail = maskEmail(user.email)
 
   // Rate limit: check for any code (even expired) created within the last 90 seconds
   const { data: recent } = await admin
@@ -32,7 +40,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (recent) {
-    return NextResponse.json({ otp_sent: false, rateLimited: true })
+    return NextResponse.json({ otp_sent: false, rateLimited: true, email: maskedEmail })
   }
 
   // No valid unexpired code — generate a new one
@@ -54,22 +62,29 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     })
 
-    await resend.emails.send({
-      from: 'Defeitos Gobbi <onboarding@resend.dev>',
-      to: user.email,
-      subject: 'Código de verificação — Defeitos Gobbi',
-      html: `
-        <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto;">
-          <h2 style="color: #1e3a5f;">Novo dispositivo detectado</h2>
-          <p>Seu código de verificação é:</p>
-          <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1e3a5f; margin: 16px 0;">
-            ${code}
+    try {
+      const { error: sendError } = await resend.emails.send({
+        from: 'Defeitos Gobbi <onboarding@resend.dev>',
+        to: user.email,
+        subject: 'Código de verificação — Defeitos Gobbi',
+        html: `
+          <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto;">
+            <h2 style="color: #1e3a5f;">Novo dispositivo detectado</h2>
+            <p>Seu código de verificação é:</p>
+            <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1e3a5f; margin: 16px 0;">
+              ${code}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">Válido por 10 minutos. Se não foi você, ignore este e-mail.</p>
           </div>
-          <p style="color: #64748b; font-size: 14px;">Válido por 10 minutos. Se não foi você, ignore este e-mail.</p>
-        </div>
-      `,
-    }).catch(() => {})
+        `,
+      })
+      if (sendError) {
+        return NextResponse.json({ otp_sent: false, sendError: true, email: maskedEmail })
+      }
+    } catch {
+      return NextResponse.json({ otp_sent: false, sendError: true, email: maskedEmail })
+    }
   }
 
-  return NextResponse.json({ otp_sent: true })
+  return NextResponse.json({ otp_sent: true, email: maskedEmail })
 }

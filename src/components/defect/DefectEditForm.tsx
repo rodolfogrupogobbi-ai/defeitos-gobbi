@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import type { Defect, Company, Brand, DefectType } from '@/types'
+import { LOJA_ORIGEM_OPTIONS } from '@/types'
 
 const schema = z.object({
   company_id: z.string().min(1, 'Selecione a empresa'),
@@ -26,6 +27,7 @@ const schema = z.object({
   client_phone: z.string().min(8, 'Informe o telefone'),
   client_code: z.string().optional(),
   received_at: z.string().min(1, 'Informe a data'),
+  loja_origem: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -64,6 +66,7 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
       client_phone: defect.client_phone,
       client_code: defect.client_code ?? '',
       received_at: defect.received_at.split('T')[0],
+      loja_origem: defect.loja_origem ?? '',
     },
   })
 
@@ -75,6 +78,7 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...data,
+        loja_origem: data.loja_origem || null,
         color: data.color || null,
         size: data.size || null,
         nf_number: data.nf_number || null,
@@ -116,6 +120,13 @@ export function DefectEditForm({ defect, companies, brands, defectTypes }: Props
           {...register('brand_id')}
         />
       </div>
+
+      <Select
+        label="Loja de origem do defeito"
+        options={LOJA_ORIGEM_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+        placeholder="Selecione"
+        {...register('loja_origem')}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <Input label="Produto *" error={errors.product_name?.message} {...register('product_name')} />

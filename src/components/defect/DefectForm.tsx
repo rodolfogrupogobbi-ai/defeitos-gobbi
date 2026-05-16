@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { WhatsAppReminderModal } from '@/components/defect/WhatsAppReminderModal'
 import type { Company, Brand, DefectType, Profile } from '@/types'
+import { LOJA_ORIGEM_OPTIONS } from '@/types'
 import type { TemplateVars } from '@/lib/whatsapp'
 
 const schema = z.object({
@@ -31,6 +32,7 @@ const schema = z.object({
   received_at: z.string().min(1, 'Informe a data'),
   received_by: z.string().min(1, 'Selecione quem recebeu'),
   received_by_name: z.string().optional(),
+  loja_origem: z.string().min(1, 'Selecione a loja de origem'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -214,6 +216,14 @@ export function DefectForm({ companies, brands, defectTypes, profiles, currentUs
             </div>
           </div>
         </div>
+
+        <Select
+          label="Loja de origem do defeito *"
+          options={LOJA_ORIGEM_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+          placeholder="Selecione"
+          error={errors.loja_origem?.message}
+          {...register('loja_origem')}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Input label="Produto *" error={errors.product_name?.message} {...register('product_name')} />

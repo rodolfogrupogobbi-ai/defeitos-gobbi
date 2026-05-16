@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { STAGE_LABELS, REIMBURSEMENT_LABELS, CLIENT_RESOLUTION_LABELS } from '@/types'
+import { STAGE_LABELS, REIMBURSEMENT_LABELS, CLIENT_RESOLUTION_LABELS, LOJA_ORIGEM_LABELS } from '@/types'
 import { HistoryList } from '@/components/defect/HistoryList'
 import { WhatsAppButton } from '@/components/defect/WhatsAppButton'
 import { StageAdvancer } from '@/components/defect/StageAdvancer'
@@ -117,6 +117,7 @@ export default async function DefectDetailPage({
           <h2 className="font-semibold text-gray-900">Dados do produto</h2>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {[
+              ...(defectData.loja_origem ? [['Loja de origem', LOJA_ORIGEM_LABELS[defectData.loja_origem] ?? defectData.loja_origem]] : []),
               ['Cor', defectData.color],
               ['Tamanho', defectData.size],
               ['NF (venda ao cliente)', defectData.nf_number],
@@ -248,7 +249,7 @@ export default async function DefectDetailPage({
                   <div><dt className="text-gray-500">Razão Social</dt><dd className="font-medium">{defectData.fiscal_razao_social}</dd></div>
                 )}
                 {defectData.fiscal_icms !== null && (
-                  <div><dt className="text-gray-500">ICMS (%)</dt><dd className="font-medium">{defectData.fiscal_icms}</dd></div>
+                  <div><dt className="text-gray-500">ICMS (R$)</dt><dd className="font-medium">{Number(defectData.fiscal_icms).toFixed(2)}</dd></div>
                 )}
                 {defectData.fiscal_aliquota !== null && (
                   <div><dt className="text-gray-500">Alíquota (%)</dt><dd className="font-medium">{defectData.fiscal_aliquota}</dd></div>

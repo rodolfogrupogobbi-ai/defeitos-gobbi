@@ -19,6 +19,7 @@ export async function PATCH(
     'reimbursement_nf_number', 'boleto_number', 'boleto_original_value', 'boleto_updated_value',
     'fiscal_icms', 'fiscal_aliquota', 'fiscal_frete', 'fiscal_desconto',
     'fiscal_nf', 'fiscal_endereco', 'fiscal_razao_social',
+    'loja_origem',
   ]
   const update: Record<string, unknown> = {}
   for (const key of allowed) {

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { subYears, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { canAccessDashboard } from '@/lib/permissions'
+import { LOJA_ORIGEM_OPTIONS } from '@/types'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { DefectsTable } from '@/components/dashboard/DefectsTable'
 import { ExportButton } from '@/components/dashboard/ExportButton'
@@ -15,6 +16,7 @@ interface SearchParams {
   stage?: string
   operator?: string
   client?: string
+  loja?: string
 }
 
 export default async function PainelPage({
@@ -57,6 +59,7 @@ export default async function PainelPage({
   if (sp.stage) query = query.eq('current_stage', sp.stage)
   if (sp.operator) query = query.eq('received_by', sp.operator)
   if (sp.client) query = query.ilike('client_name', `%${sp.client}%`)
+  if (sp.loja) query = query.eq('loja_origem', sp.loja)
 
   const { data: defects } = await query
   const all = (defects ?? []) as any[]
@@ -107,6 +110,8 @@ export default async function PainelPage({
     .map(b => ({ name: b.name, open: b.owed - b.received, oldestPendingDate: b.oldestPendingDate }))
     .filter(b => b.open > 0)
     .sort((a, b) => b.open - a.open)
+
+  const improcedentes = all.filter((d: any) => d.current_stage === 'improcedente')
 
   // Fetch filter options
   const [{ data: companies }, { data: brands }, { data: profiles }] = await Promise.all([
@@ -224,6 +229,19 @@ export default async function PainelPage({
             className="border border-gray-300 rounded px-2 py-1.5 text-sm"
           />
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">Loja de Origem</label>
+          <select
+            name="loja"
+            defaultValue={sp.loja ?? ''}
+            className="border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+          >
+            <option value="">Todas</option>
+            {LOJA_ORIGEM_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
         <button
           type="submit"
           className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
@@ -305,6 +323,43 @@ export default async function PainelPage({
                     {b.oldestPendingDate
                       ? format(new Date(b.oldestPendingDate + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
                       : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Improcedentes */}
+      {improcedentes.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 mb-3">
+            Improcedentes — {improcedentes.length} ocorrência{improcedentes.length !== 1 ? 's' : ''}
+          </h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                <th className="pb-2 font-medium">Protocolo</th>
+                <th className="pb-2 font-medium">Marca</th>
+                <th className="pb-2 font-medium">Produto</th>
+                <th className="pb-2 font-medium">Cliente</th>
+                <th className="pb-2 font-medium">Recebido em</th>
+              </tr>
+            </thead>
+            <tbody>
+              {improcedentes.map((d: any) => (
+                <tr key={d.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                  <td className="py-2">
+                    <a href={`/defeito/${d.id}`} className="text-blue-600 hover:underline font-mono text-xs">
+                      {d.protocol_number ?? d.id.slice(0, 8)}
+                    </a>
+                  </td>
+                  <td className="py-2 text-gray-700">{d.brand?.name ?? '—'}</td>
+                  <td className="py-2 text-gray-700">{d.product_name}</td>
+                  <td className="py-2 text-gray-700">{d.client_name}</td>
+                  <td className="py-2 text-gray-500">
+                    {format(new Date(d.received_at), 'dd/MM/yyyy', { locale: ptBR })}
                   </td>
                 </tr>
               ))}

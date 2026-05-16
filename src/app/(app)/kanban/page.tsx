@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
-import { ACTIVE_STAGES } from '@/types'
+import { KANBAN_STAGES } from '@/types'
 
 export default async function KanbanPage() {
   const supabase = await createClient()
@@ -15,10 +15,12 @@ export default async function KanbanPage() {
   const { data: defects } = await supabase
     .from('defects')
     .select('*, company:companies(*), brand:brands(*), defect_type:defect_types(*)')
-    .in('current_stage', ACTIVE_STAGES)
+    .in('current_stage', KANBAN_STAGES)
     .is('deleted_at', null)
-    // Hide reimbursed_to_store defects older than 30 days — they live in reports only
+    // Hide reimbursed_to_store older than 30 days — they live in reports only
     .or(`current_stage.neq.reimbursed_to_store,brand_reimbursed_at.gte.${cutoff}`)
+    // Hide improcedente older than 30 days — they live in reports only
+    .or(`current_stage.neq.improcedente,updated_at.gte.${cutoff}`)
     .order('received_at', { ascending: true })
 
   return (

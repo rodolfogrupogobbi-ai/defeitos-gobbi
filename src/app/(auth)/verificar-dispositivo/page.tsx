@@ -9,9 +9,19 @@ export default function VerificarDispositivoPage() {
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
+  const [sending, setSending] = useState(true)
+  const [maskedEmail, setMaskedEmail] = useState('')
+  const [initialSendError, setInitialSendError] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/send-otp', { method: 'POST' }).catch(() => {})
+    fetch('/api/auth/send-otp', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.email) setMaskedEmail(data.email)
+        if (data.sendError) setInitialSendError(true)
+      })
+      .catch(() => setInitialSendError(true))
+      .finally(() => setSending(false))
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,16 +55,20 @@ export default function VerificarDispositivoPage() {
     setResending(true)
     setResendSuccess(false)
     setError('')
+    setInitialSendError(false)
     try {
       const res = await fetch('/api/auth/send-otp', { method: 'POST' })
       const data = await res.json()
+      if (data.email) setMaskedEmail(data.email)
       if (data.rateLimited) {
         setError('Aguarde 90 segundos antes de solicitar um novo código.')
+      } else if (data.sendError) {
+        setError('Não foi possível enviar o e-mail. Verifique com o administrador.')
       } else {
         setResendSuccess(true)
       }
     } catch {
-      // silently ignore
+      setError('Erro ao reenviar. Tente novamente.')
     } finally {
       setResending(false)
     }
@@ -65,9 +79,19 @@ export default function VerificarDispositivoPage() {
       <div className="w-full max-w-sm bg-white rounded-xl shadow-sm p-8 space-y-6">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Verificar dispositivo</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Enviamos um código de 6 dígitos para seu e-mail. Digite-o abaixo.
-          </p>
+          {sending ? (
+            <p className="text-sm text-gray-500 mt-1">Enviando código de verificação...</p>
+          ) : initialSendError ? (
+            <p className="text-sm text-red-600 mt-1">
+              Não foi possível enviar o e-mail de verificação. Use o botão abaixo para tentar novamente.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">
+              Enviamos um código de 6 dígitos para{' '}
+              {maskedEmail ? <strong>{maskedEmail}</strong> : 'seu e-mail'}.
+              {' '}Digite-o abaixo.
+            </p>
+          )}
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
@@ -94,7 +118,7 @@ export default function VerificarDispositivoPage() {
           <button
             type="button"
             onClick={handleResend}
-            disabled={resending}
+            disabled={resending || sending}
             className="text-sm text-blue-600 hover:underline disabled:opacity-50"
           >
             {resending ? 'Enviando...' : 'Reenviar código'}

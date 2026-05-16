@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getAlertLevel, daysElapsed } from '@/lib/date-utils'
+import { LOJA_ORIGEM_LABELS } from '@/types'
 import type { Defect } from '@/types'
 
 const ALERT_STYLES = {
@@ -38,9 +39,16 @@ export function DefectCard({ defect }: { defect: Defect }) {
       </div>
       <p className="text-xs text-gray-700 truncate font-medium">{defect.product_name}</p>
       <p className="text-xs text-gray-500 truncate mt-0.5">{defect.client_name}</p>
-      <p className="text-xs mt-1.5 truncate" style={{ color: 'rgba(0,0,0,0.35)' }}>
-        {defect.company?.name}
-      </p>
+      <div className="flex items-center justify-between mt-1.5">
+        <p className="text-xs truncate" style={{ color: 'rgba(0,0,0,0.35)' }}>
+          {defect.company?.name}
+        </p>
+        {defect.loja_origem && (
+          <span className="text-xs shrink-0 ml-1" style={{ color: 'rgba(0,0,0,0.35)' }}>
+            {LOJA_ORIGEM_LABELS[defect.loja_origem]}
+          </span>
+        )}
+      </div>
     </Link>
   )
 }
